@@ -1,10 +1,7 @@
 import java.util.Date;
 import java.util.Random;
 
-import org.apache.commons.codec.binary.Base64;
-import org.bson.types.ObjectId;
-
-import com.mongodb.*;
+import com.mongodb.BasicDBObject;
 
 
 //A Test Record is a MongoDB Record Object that is self populating
@@ -13,7 +10,7 @@ public class TestRecord extends BasicDBObject {
 
 	Random rng;
 	final double VOCAB_SIZE = 100000;
-	final double NUMBER_SIZE = 1000000;
+
 	
 	private String CreateString( int length , int fieldNo)
 	{
@@ -34,22 +31,32 @@ public class TestRecord extends BasicDBObject {
 		return sb.toString();
 	}
 	
-	//Field size is a mean field size not an absolute
 	
-	public void AddOID()
+	//This needs to be clever as we really need to be able to 
+	//Say - assuming nothin was removed - what is already in the DB
+	//Therefore we will have a one-up per thread
+	//A thread starting will find out what it's highest was
+	
+	public void AddOID(int workerid, int sequence)
 	{
-		ObjectId oid = new ObjectId();
+		BasicDBObject oid = new BasicDBObject();
+		oid.append("w",workerid);
+		oid.append("i",sequence);
 		this.append("_id", oid);
 	}
-	public TestRecord( int nFields , int fieldSize)
+	
+	
+	public TestRecord( int nFields , int fieldSize, int workerID, int sequence, long numberSize)
 	{
 		rng = new Random();
 		int fieldNo;
-		for(fieldNo=0;fieldNo<nFields;fieldNo++)
+		//Always a field 0
+		for(fieldNo=0;(fieldNo<nFields || fieldNo==0);fieldNo++)
 		{
 			if(fieldNo % 3 == 0)
 			{
-				long r = (long) Math.abs(Math.floor(rng.nextGaussian() * NUMBER_SIZE));
+				//Field should always be a long this way
+				long r = (long) Math.abs(Math.floor(rng.nextGaussian() * numberSize));
 				this.append("fld"+fieldNo, r);
 			} else
 				if (fieldNo % 5 == 0)
@@ -64,6 +71,6 @@ public class TestRecord extends BasicDBObject {
 					this.append("fld"+fieldNo, fieldContent);
 				}
 		}
-		AddOID();
+		AddOID( workerID,sequence);
 	}
 }
