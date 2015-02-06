@@ -4,6 +4,7 @@ import java.util.Random;
 import com.mongodb.BasicDBObject;
 import com.mongodb.BulkWriteOperation;
 import com.mongodb.BulkWriteResult;
+import com.mongodb.CommandResult;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
@@ -30,6 +31,34 @@ public class MongoWorker implements Runnable {
 		// Use my workerID and find the highest id used for that
 		// id
 		sequence = getHighestID();
+	
+		if(testOpts.sharded)
+		{
+		//I'd like to pick a shard and write there - it's going to be faster and 
+		//We can ensure we distribute our workers over out shards
+		//So we will tell mongo that's where we want our records to go
+			DB admindb = mongoClient.getDB("admin");
+			CommandResult cr;
+			cr = admindb.command(new BasicDBObject("split",testOpts.databaseName+"."+testOpts.collectionName).append("middle",
+					new BasicDBObject("_id",new BasicDBObject("w",id).append("s",sequence+1))));
+			if(cr.ok() == false)
+			{
+				System.out.println(cr.getErrorMessage());
+				//return;
+			}
+			System.out.println("split at " + id + " " + sequence+1);
+			//And move that to a shard - which shard? take my workerid and mod it with the number of shards
+			int shardno = id % testOpts.numShards;
+			cr = admindb.command(new BasicDBObject("moveChunk",testOpts.databaseName+"."+testOpts.collectionName).append("find",
+					new BasicDBObject("_id",new BasicDBObject("w",id).append("s",sequence+1))).append("to", String.format("shard%04d", shardno)));
+			if(cr.ok() == false)
+			{
+				System.out.println(cr.getErrorMessage());
+				//return;
+			}
+			System.out.println("move to " + shardno);
+		}
+		
 		rng = new Random();
 		// System.out.println(" Connection " + workerID +
 		// " reports highest id used is " + sequence);
@@ -99,7 +128,9 @@ public class MongoWorker implements Runnable {
 		cursor.limit(20);
 		while( cursor.hasNext() )
 		{
-		     BasicDBObject obj = (BasicDBObject)cursor.next();
+			
+		    @SuppressWarnings("unused")
+			BasicDBObject obj = (BasicDBObject)cursor.next();
 		}
 	
 
@@ -140,7 +171,7 @@ public class MongoWorker implements Runnable {
 	private void insertNewRecord(BulkWriteOperation bulkWriter) {
 		TestRecord tr;
 		tr = new TestRecord(testOpts.numFields, testOpts.textFieldLen,
-				workerID, sequence++,testOpts.NUMBER_SIZE);
+				workerID, sequence++,testOpts.NUMBER_SIZE,testOpts.numShards);
 		bulkWriter.insert(tr);
 	}
 

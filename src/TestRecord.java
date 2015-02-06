@@ -1,6 +1,8 @@
 import java.util.Date;
 import java.util.Random;
 
+
+
 import com.mongodb.BasicDBObject;
 
 
@@ -46,20 +48,48 @@ public class TestRecord extends BasicDBObject {
 	}
 	
 	
-	public TestRecord( int nFields , int fieldSize, int workerID, int sequence, long numberSize)
+	//Just so we always know what the type of a given field is
+	//Userful for querying, indexing etc
+	
+	static public int getFieldType(int fieldno)
+	{
+		if(fieldno == 0)
+		{
+			return 0; //Int
+		}
+		
+		if(fieldno == 1)
+		{
+			return 2; //Date
+		}
+		
+		if(fieldno % 3 == 0)
+		{
+			return 0; //Integer
+		}
+		
+		if(fieldno % 5 == 0)
+		{
+			return 2; //Date
+		}
+		
+		return 1; //Text
+	}
+	public TestRecord( int nFields , int fieldSize, int workerID, int sequence, long numberSize, int numShards)
 	{
 		rng = new Random();
 		int fieldNo;
 		//Always a field 0
 		for(fieldNo=0;(fieldNo<nFields || fieldNo==0);fieldNo++)
 		{
-			if(fieldNo % 3 == 0)
+			int fType = getFieldType(fieldNo);
+			if(fType == 0)
 			{
 				//Field should always be a long this way
 				long r = (long) Math.abs(Math.floor(rng.nextGaussian() * numberSize));
 				this.append("fld"+fieldNo, r);
 			} else
-				if (fieldNo % 5 == 0)
+				if (fieldNo == 2)
 				{
 					long r = (long) Math.abs(Math.floor(rng.nextGaussian() * Long.MAX_VALUE));
 					Date now = new Date(r);

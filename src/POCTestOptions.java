@@ -11,7 +11,7 @@ public class POCTestOptions {
 	int numFields = 10;
 	final long NUMBER_SIZE = 1000000;
 	int textFieldLen = 30;
-	int numThreads = 16;
+	int numThreads = 4;
 	int reportTime = 10;
 	int slowThreshold = 50;
 	boolean logstats = false;
@@ -19,13 +19,15 @@ public class POCTestOptions {
 	int keyqueries = 0;
 	int updates = 0;
 	int rangequeries=0;
-	int duration = 18000;
+	int duration = 2;
+	int numShards = 1;
 	String logfile = null;
-	
+	boolean sharded = false;
 	String statsfile = "pocload.csv";
 	String databaseName = "POCDB";
 	String collectionName = "POCCOLL";
 	boolean emptyFirst = false;
+	boolean printOnly = true;
 	int secondaryidx=0;
 	
 	boolean helpOnly = false;
@@ -46,13 +48,16 @@ public class POCTestOptions {
 		cliopt.addOption("s","slowthreshold",true,"Slow operation threshold (default 500)");
 		cliopt.addOption("h","help",false,"Show Help");
 		cliopt.addOption("n","namespace",true,"Namespace to use , for example myDatabase.myCollection");
-		cliopt.addOption("f","numfields",true,"Number of fields in test records (default 10)");
+		cliopt.addOption("f","numfields",true,"Number of top level fields in test records (default 10)");
 		cliopt.addOption("l","textfieldsize",true,"Length of text fields in bytes (default 30)");
 		cliopt.addOption("i","insert",true,"Ratio of insert operations (default 100)");
 		cliopt.addOption("k","keyquery",true,"Ratio of key query operations (default 100)");
 		cliopt.addOption("u","update",true,"Ratio of update operations (default 100)");
 		cliopt.addOption("r","rangequery",true,"Ratio of range query operations (default 100)");
 		cliopt.addOption("x","indexes",true,"Number of secondary indexes (default 0)");
+		cliopt.addOption("p","indexes",false,"Print out a sample recortd according to the other parameters then quit");
+		//cliopt.addOption("a","arrays",true,"Shape of any arrays in sample records x:y so -a 12:60 adds an array of 12 length 60 arrays of integers");
+		//cliopt.addOption("g","arrays",true,"increment Atomically and Fetch an array member randomly using array in a parameter");
 		CommandLine cmd = parser.parse(cliopt, args);
 		if(cmd.hasOption("n"))
 		{
@@ -71,6 +76,12 @@ public class POCTestOptions {
 		{
 			emptyFirst=true;
 		}
+		
+		if(cmd.hasOption("p"))
+		{
+			printOnly=true;
+		}
+		
 		
 		if(cmd.hasOption("r"))
 		{

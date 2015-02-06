@@ -1,3 +1,4 @@
+
 MongoDB POC Test Driver.
 ------------------------
 
@@ -17,7 +18,7 @@ It allows you to define the record size to use both the overall size and the num
 It allows you to make use of bulk operators in MongoDB
 
 
-Development Plan
+Development Plan / Backlog
 
 - fast sample Record Generator [Done]
 - Inserts [Done]
@@ -32,12 +33,21 @@ Development Plan
 
 (V1 MVP)
 
-- Query Support
-- Secondary Index Support
-- Updates
+- Key Query Support [Done]
+Log to file [Done]
+
+- Secondary Index Support [Done]
+- Updates [Done]
+
+- Shard Support [Done]
+
+
+- Secondary Query Support
+- Document Depth
+- Show Document
+
 
 - Good Replica Support
-- Shard Support
 
 - Reporting of primary, secondary etc
 - Internal record counting (TO COMPARE AFTER FAILOVER)?
