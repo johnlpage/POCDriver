@@ -6,9 +6,9 @@ import java.util.concurrent.ConcurrentHashMap;
 public class POCTestResults {
 	Date	startTime;
 	Date	lastIntervalTime;
+	long	initialCount;
 
-
-	public static String[] opTypes = { "inserts", "keyqueries","updates","rangequeries" };
+	public static String[] opTypes = { "inserts", "keyqueries","updates","rangequeries"};
 	private ConcurrentHashMap<String,POCopStats> opStats;
 
 	
@@ -86,13 +86,13 @@ public class POCTestResults {
 		return os.slowOps.get();
 	}
 	
-	public void RecordSlowOp(String opType)
+	public void RecordSlowOp(String opType, int number)
 	{
 		POCopStats os = opStats.get(opType);
-		os.slowOps.addAndGet(1);
+		os.slowOps.addAndGet(number);
 	}
 	
-	public void RecordOpsDone(String opType, Long howmany)
+	public void RecordOpsDone(String opType, int howmany)
 	{
 		POCopStats os = opStats.get(opType);
 		if(os == null)

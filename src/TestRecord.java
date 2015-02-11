@@ -1,5 +1,8 @@
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Random;
+
+
 
 
 
@@ -75,11 +78,12 @@ public class TestRecord extends BasicDBObject {
 		
 		return 1; //Text
 	}
-	public TestRecord( int nFields , int fieldSize, int workerID, int sequence, long numberSize, int numShards)
+	public TestRecord( int nFields , int fieldSize, int workerID, int sequence, long numberSize, int numShards, int[] array)
 	{
 		rng = new Random();
 		int fieldNo;
 		//Always a field 0
+		AddOID( workerID,sequence);
 		for(fieldNo=0;(fieldNo<nFields || fieldNo==0);fieldNo++)
 		{
 			int fType = getFieldType(fieldNo);
@@ -91,16 +95,35 @@ public class TestRecord extends BasicDBObject {
 			} else
 				if (fieldNo == 2)
 				{
-					long r = (long) Math.abs(Math.floor(rng.nextGaussian() * Long.MAX_VALUE));
-					Date now = new Date(r);
+					//long r = (long) Math.abs(Math.floor(rng.nextGaussian() * Long.MAX_VALUE));
+					Date now = new Date();
+					//Subtract up to a few years
+					long t = now.getTime();
+					//Push it back 30 years or so
+					t = (long) (t - Math.abs(Math.floor(rng.nextGaussian() * 100000000 * 3000)));
+					now.setTime(t);
 					this.append("fld"+fieldNo, now);
 				}
-				else {
+				else {	
 					//put in a string
 					String fieldContent = CreateString( fieldSize , fieldNo );
 					this.append("fld"+fieldNo, fieldContent);
 				}
 		}
-		AddOID( workerID,sequence);
+		if(array[0] > 0)
+		{
+			ArrayList <ArrayList<Integer>> ar = new ArrayList<ArrayList<Integer>>(array[0]);
+			for(int q=0;q<array[0];q++)
+			{
+				ArrayList<Integer> sa = new ArrayList<Integer>(array[1]);
+				for(int w=0;w<array[1];w++) 
+				{
+					sa.add(0);
+				}
+				ar.add(sa);
+			}
+				this.append("arr",ar);
+		}
 	}
+
 }

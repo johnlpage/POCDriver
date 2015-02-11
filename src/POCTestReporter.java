@@ -37,8 +37,8 @@ public class POCTestReporter implements Runnable {
 		if (testResults.GetSecondsElapsed() < testOpts.reportTime)
 			return;
 		System.out.println("------------------------");
-		System.out.format("After %d seconds, %d records inserted\n",
-				testResults.GetSecondsElapsed(), insertsDone);
+		System.out.format("After %d seconds, %d new records inserted - collection has %d in total \n",
+				testResults.GetSecondsElapsed(), insertsDone, testResults.initialCount + insertsDone);
 		
 		if(outfile != null)
 		{

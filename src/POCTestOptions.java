@@ -7,7 +7,7 @@ import org.apache.commons.cli.ParseException;
 
 
 public class POCTestOptions {
-	int batchSize = 1;
+	int batchSize = 512;
 	int numFields = 10;
 	final long NUMBER_SIZE = 1000000;
 	int textFieldLen = 30;
@@ -17,9 +17,10 @@ public class POCTestOptions {
 	boolean logstats = false;
 	int insertops = 100;
 	int keyqueries = 0;
+	int arrayupdates = 0;
 	int updates = 0;
 	int rangequeries=0;
-	int duration = 2;
+	int duration = 18000;
 	int numShards = 1;
 	String logfile = null;
 	boolean sharded = false;
@@ -27,9 +28,10 @@ public class POCTestOptions {
 	String databaseName = "POCDB";
 	String collectionName = "POCCOLL";
 	boolean emptyFirst = false;
-	boolean printOnly = true;
+	boolean printOnly = false;
 	int secondaryidx=0;
-	
+	int arraytop = 0;
+	int arraynext = 0;
 	boolean helpOnly = false;
 	String connectionDetails = "mongodb://localhost:27017";
 	
@@ -40,24 +42,25 @@ public class POCTestOptions {
 		Options cliopt;
 		cliopt = new Options();
 		cliopt.addOption("c","host",true,"Mongodb connection details (default 'mongodb://localhost:27017' )");
-		cliopt.addOption("e",false,"Remove data from collection on startup");
+		cliopt.addOption("e","empty",false,"Remove data from collection on startup");
 		cliopt.addOption("d","duration",true,"Test duration in seconds, default 18,000");
-		cliopt.addOption("t","threads",true,"Number of threads (default 32)");
+		cliopt.addOption("t","threads",true,"Number of threads (default 4)");
 		cliopt.addOption("o","logfile",true,"Output stats to  <file> ");
 		cliopt.addOption("b","bulksize",true,"Bulk op size (default 512)");
-		cliopt.addOption("s","slowthreshold",true,"Slow operation threshold (default 500)");
+		cliopt.addOption("s","slowthreshold",true,"Slow operation threshold in ms(default 50)");
 		cliopt.addOption("h","help",false,"Show Help");
 		cliopt.addOption("n","namespace",true,"Namespace to use , for example myDatabase.myCollection");
 		cliopt.addOption("f","numfields",true,"Number of top level fields in test records (default 10)");
 		cliopt.addOption("l","textfieldsize",true,"Length of text fields in bytes (default 30)");
-		cliopt.addOption("i","insert",true,"Ratio of insert operations (default 100)");
-		cliopt.addOption("k","keyquery",true,"Ratio of key query operations (default 100)");
-		cliopt.addOption("u","update",true,"Ratio of update operations (default 100)");
-		cliopt.addOption("r","rangequery",true,"Ratio of range query operations (default 100)");
-		cliopt.addOption("x","indexes",true,"Number of secondary indexes (default 0)");
-		cliopt.addOption("p","indexes",false,"Print out a sample recortd according to the other parameters then quit");
-		//cliopt.addOption("a","arrays",true,"Shape of any arrays in sample records x:y so -a 12:60 adds an array of 12 length 60 arrays of integers");
-		//cliopt.addOption("g","arrays",true,"increment Atomically and Fetch an array member randomly using array in a parameter");
+		cliopt.addOption("i","inserts",true,"Ratio of insert operations (default 100)");
+		cliopt.addOption("k","keyqueries",true,"Ratio of key query operations (default 0)");
+		cliopt.addOption("u","updates",true,"Ratio of update operations (default 0)");
+		cliopt.addOption("r","rangequeries",true,"Ratio of range query operations (default 0)");
+		cliopt.addOption("x","indexes",true,"Number of secondary indexes - does not remove existing (default 0)");
+		cliopt.addOption("p","print",false,"Print out a sample record according to the other parameters then quit");
+		cliopt.addOption("a","arrays",true,"Shape of any arrays in new sample records x:y so -a 12:60 adds an array of 12 length 60 arrays of integers");
+		cliopt.addOption("g","arrayupdates",true,"Ratio of array increment ops requires option 'a' (default 0)");
+		
 		CommandLine cmd = parser.parse(cliopt, args);
 		if(cmd.hasOption("n"))
 		{
@@ -72,10 +75,24 @@ public class POCTestOptions {
 			collectionName=parts[1];
 		}
 		
+		if(cmd.hasOption("a"))
+		{
+			String ao = cmd.getOptionValue("a");
+			String[] parts = ao.split(":");
+			if(parts.length != 2)
+			{
+				System.err.println("array format is 'top:second'");
+				System.exit(1);
+			}
+			arraytop = Integer.parseInt(parts[0]);
+			arraynext = Integer.parseInt(parts[1]);
+		}
+		
 		if(cmd.hasOption("e"))
 		{
 			emptyFirst=true;
 		}
+		
 		
 		if(cmd.hasOption("p"))
 		{
@@ -91,6 +108,11 @@ public class POCTestOptions {
 		if(cmd.hasOption("d"))
 		{
 			duration = Integer.parseInt(cmd.getOptionValue("d"));
+		}
+		
+		if(cmd.hasOption("g"))
+		{
+			arrayupdates = Integer.parseInt(cmd.getOptionValue("g"));
 		}
 		
 		if(cmd.hasOption("i"))

@@ -18,7 +18,7 @@ public class LoadRunner {
 	MongoClient mongoClient;
 	
 
-	private void PrepareSystem(POCTestOptions testOpts)
+	private void PrepareSystem(POCTestOptions testOpts,POCTestResults results)
 	{
 		DB db;
 		DBCollection coll;
@@ -35,6 +35,7 @@ public class LoadRunner {
 			coll.createIndex(new BasicDBObject("fld"+x,1));
 		}
 		
+		results.initialCount = coll.count();
 		//Now have a look and see if we are sharded
 		//And how many shards and make sure that the collection is sharded
 		ConfigureSharding(testOpts);
@@ -50,7 +51,7 @@ public class LoadRunner {
 			System.out.println(cr.getErrorMessage());
 			return;
 		}
-		System.out.println(cr);
+		//System.out.println(cr);
 		if (cr.get("process").equals("mongos"))
 		{
 			System.out.println("Sharded System");
@@ -84,33 +85,12 @@ public class LoadRunner {
 			DBCollection shards = configdb.getCollection("shards");
 			//DBCursor cursor = (DBCursor) shards.find();
 			testOpts.numShards = (int)shards.count();
-			/*
-			int scount = 0;
-			while( cursor.hasNext() )
-			{
-				
-			    @SuppressWarnings("unused")
-				BasicDBObject obj = (BasicDBObject)cursor.next();
-			    String shardName = obj.getString("_id");
-			    System.out.println(scount);
-			    //
-				cr = admindb.command(new BasicDBObject("split",testOpts.databaseName+"."+testOpts.collectionName).append("middle",
-						new BasicDBObject("_id",new BasicDBObject("s",scount))));
-				if(cr.ok() == false)
-				{
-					System.out.println(cr.getErrorMessage());
-					//return;
-				}
-			    scount++;
-			}
-			
-		*/
 		}
 	}
 	
 	public void RunLoad(POCTestOptions testOpts, POCTestResults testResults) {
 
-		PrepareSystem(testOpts);
+		PrepareSystem(testOpts,testResults);
 		// Report on progress by looking at testResults
 		Runnable reporter = new POCTestReporter(testResults,mongoClient,testOpts);
 		ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
