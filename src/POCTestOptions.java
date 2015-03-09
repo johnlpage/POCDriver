@@ -24,16 +24,21 @@ public class POCTestOptions {
 	int numShards = 1;
 	String logfile = null;
 	boolean sharded = false;
+	boolean singleserver = false;
 	String statsfile = "pocload.csv";
 	String databaseName = "POCDB";
 	String collectionName = "POCCOLL";
+	String workflow = null;
 	boolean emptyFirst = false;
 	boolean printOnly = false;
 	int secondaryidx=0;
 	int arraytop = 0;
 	int arraynext = 0;
+	boolean findandmodify=false;
+	int workingset = 100;
 	boolean helpOnly = false;
 	String connectionDetails = "mongodb://localhost:27017";
+	int multistage =0;
 	
 	public POCTestOptions(String[] args) throws ParseException
 	{
@@ -41,27 +46,43 @@ public class POCTestOptions {
 		
 		Options cliopt;
 		cliopt = new Options();
-		cliopt.addOption("c","host",true,"Mongodb connection details (default 'mongodb://localhost:27017' )");
-		cliopt.addOption("e","empty",false,"Remove data from collection on startup");
-		cliopt.addOption("d","duration",true,"Test duration in seconds, default 18,000");
-		cliopt.addOption("t","threads",true,"Number of threads (default 4)");
-		cliopt.addOption("o","logfile",true,"Output stats to  <file> ");
-		cliopt.addOption("b","bulksize",true,"Bulk op size (default 512)");
-		cliopt.addOption("s","slowthreshold",true,"Slow operation threshold in ms(default 50)");
-		cliopt.addOption("h","help",false,"Show Help");
-		cliopt.addOption("n","namespace",true,"Namespace to use , for example myDatabase.myCollection");
-		cliopt.addOption("f","numfields",true,"Number of top level fields in test records (default 10)");
-		cliopt.addOption("l","textfieldsize",true,"Length of text fields in bytes (default 30)");
-		cliopt.addOption("i","inserts",true,"Ratio of insert operations (default 100)");
-		cliopt.addOption("k","keyqueries",true,"Ratio of key query operations (default 0)");
-		cliopt.addOption("u","updates",true,"Ratio of update operations (default 0)");
-		cliopt.addOption("r","rangequeries",true,"Ratio of range query operations (default 0)");
-		cliopt.addOption("x","indexes",true,"Number of secondary indexes - does not remove existing (default 0)");
-		cliopt.addOption("p","print",false,"Print out a sample record according to the other parameters then quit");
 		cliopt.addOption("a","arrays",true,"Shape of any arrays in new sample records x:y so -a 12:60 adds an array of 12 length 60 arrays of integers");
+		cliopt.addOption("b","bulksize",true,"Bulk op size (default 512)");
+		cliopt.addOption("c","host",true,"Mongodb connection details (default 'mongodb://localhost:27017' )");
+		cliopt.addOption("d","duration",true,"Test duration in seconds, default 18,000");
+		cliopt.addOption("e","empty",false,"Remove data from collection on startup");
+		cliopt.addOption("f","numfields",true,"Number of top level fields in test records (default 10)");
 		cliopt.addOption("g","arrayupdates",true,"Ratio of array increment ops requires option 'a' (default 0)");
-		
+		cliopt.addOption("h","help",false,"Show Help");
+		cliopt.addOption("i","inserts",true,"Ratio of insert operations (default 100)");
+		cliopt.addOption("j","workingset",true,"Percentage of database to be the working set (default 100)");
+		cliopt.addOption("k","keyqueries",true,"Ratio of key query operations (default 0)");
+		cliopt.addOption("l","textfieldsize",true,"Length of text fields in bytes (default 30)");
+		cliopt.addOption("m","findandmodify",false,"Use findandmodify instead of update and retireve record (with -u or -v only)");
+		cliopt.addOption("n","namespace",true,"Namespace to use , for example myDatabase.myCollection");
+		cliopt.addOption("o","logfile",true,"Output stats to  <file> ");
+		cliopt.addOption("p","print",false,"Print out a sample record according to the other parameters then quit");
+		cliopt.addOption("r","rangequeries",true,"Ratio of range query operations (default 0)");
+		cliopt.addOption("s","slowthreshold",true,"Slow operation threshold in ms(default 50)");
+		cliopt.addOption("t","threads",true,"Number of threads (default 4)");
+		cliopt.addOption("u","updates",true,"Ratio of update operations (default 0)");
+		cliopt.addOption("v","workflow",true,"Specify a set of ordered operations per thread from [iukp]");
+		cliopt.addOption("w","nosharding",false,"Do not shard the collection");
+		cliopt.addOption("x","indexes",true,"Number of secondary indexes - does not remove existing (default 0)");
 		CommandLine cmd = parser.parse(cliopt, args);
+		
+
+		
+		if(cmd.hasOption("j"))
+		{
+			workingset = Integer.parseInt(cmd.getOptionValue("j"));
+		}
+		
+		if(cmd.hasOption("v"))
+		{
+			workflow = cmd.getOptionValue("v");
+		}	
+		
 		if(cmd.hasOption("n"))
 		{
 			String ns = cmd.getOptionValue("n");
@@ -99,7 +120,10 @@ public class POCTestOptions {
 			printOnly=true;
 		}
 		
-		
+		if(cmd.hasOption("w"))
+		{
+			singleserver=true;
+		}
 		if(cmd.hasOption("r"))
 		{
 			rangequeries = Integer.parseInt(cmd.getOptionValue("r"));
@@ -113,6 +137,11 @@ public class POCTestOptions {
 		if(cmd.hasOption("g"))
 		{
 			arrayupdates = Integer.parseInt(cmd.getOptionValue("g"));
+		}
+		
+		if(cmd.hasOption("u"))
+		{
+			updates = Integer.parseInt(cmd.getOptionValue("u"));
 		}
 		
 		if(cmd.hasOption("i"))
@@ -161,6 +190,11 @@ public class POCTestOptions {
 		if(cmd.hasOption("l"))
 		{
 			textFieldLen = Integer.parseInt(cmd.getOptionValue("l"));
+		}
+		
+		if(cmd.hasOption("m"))
+		{
+			findandmodify = true;
 		}
 		
 		if(cmd.hasOption("f"))

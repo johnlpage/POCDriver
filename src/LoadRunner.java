@@ -38,7 +38,10 @@ public class LoadRunner {
 		results.initialCount = coll.count();
 		//Now have a look and see if we are sharded
 		//And how many shards and make sure that the collection is sharded
-		ConfigureSharding(testOpts);
+		if(! testOpts.singleserver) {
+			ConfigureSharding(testOpts);
+		}
+		
 		
 	}
 	
@@ -48,26 +51,26 @@ public class LoadRunner {
 		CommandResult cr = admindb.command("serverStatus");
 		if(cr.ok() == false)
 		{
-			System.out.println(cr.getErrorMessage());
+			//System.out.println(cr.getErrorMessage());
 			return;
 		}
 		//System.out.println(cr);
 		if (cr.get("process").equals("mongos"))
 		{
-			System.out.println("Sharded System");
+			//System.out.println("Sharded System");
 			testOpts.sharded = true;
 			//Turn the auto balancer off - good apps rarely need it
 			DB configdb = mongoClient.getDB("config");
 			if(configdb != null)
 			{
 				DBCollection settings = configdb.getCollection("settings");
-				settings.update(new BasicDBObject("_id","balancer"), new BasicDBObject("$set",new BasicDBObject("stopped",true)));
-				
+				settings.update(new BasicDBObject("_id","balancer"), new BasicDBObject("$set",new BasicDBObject("stopped",true)),true,false);
+				//System.out.println("Balancer disabled");
 			}
 			cr = admindb.command(new BasicDBObject("enableSharding",testOpts.databaseName));
 			if(cr.ok() == false)
 			{
-				System.out.println(cr.getErrorMessage());
+				//System.out.println(cr.getErrorMessage());
 				//return;
 			}
 			
@@ -108,9 +111,10 @@ public class LoadRunner {
 		testexec.shutdown();
 	
 		try {
-			boolean b = testexec.awaitTermination(Long.MAX_VALUE,
+			testexec.awaitTermination(Long.MAX_VALUE,
 					TimeUnit.SECONDS);
-			System.out.println("All Threads Complete: " + b);
+			//System.out.println("All Threads Complete: " + b);
+			executor.shutdown();
 		} catch (InterruptedException e) {
 			System.out.println(e.getMessage());
 			
