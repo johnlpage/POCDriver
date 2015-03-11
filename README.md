@@ -21,9 +21,47 @@ It is an alternative to YCSB which:
   
 Usage
 -----
+```
+$ java -jar POCDriver.jar --help
   
-  
-  
+  MongoDB Proof Of Concept - Load Generator
+  usage: POCDriver
+   -a,--arrays <arg>          Shape of any arrays in new sample records x:y
+                              so -a 12:60 adds an array of 12 length 60
+                              arrays of integers
+   -b,--bulksize <arg>        Bulk op size (default 512)
+   -c,--host <arg>            Mongodb connection details (default
+                              'mongodb://localhost:27017' )
+   -d,--duration <arg>        Test duration in seconds, default 18,000
+   -e,--empty                 Remove data from collection on startup
+   -f,--numfields <arg>       Number of top level fields in test records
+                              (default 10)
+   -g,--arrayupdates <arg>    Ratio of array increment ops requires option
+                              'a' (default 0)
+   -h,--help                  Show Help
+   -i,--inserts <arg>         Ratio of insert operations (default 100)
+   -j,--workingset <arg>      Percentage of database to be the working set
+                              (default 100)
+   -k,--keyqueries <arg>      Ratio of key query operations (default 0)
+   -l,--textfieldsize <arg>   Length of text fields in bytes (default 30)
+   -m,--findandmodify         Use findandmodify instead of update and
+                              retireve record (with -u or -v only)
+   -n,--namespace <arg>       Namespace to use , for example
+                              myDatabase.myCollection
+   -o,--logfile <arg>         Output stats to  <file>
+   -p,--print                 Print out a sample record according to the
+                              other parameters then quit
+   -r,--rangequeries <arg>    Ratio of range query operations (default 0)
+   -s,--slowthreshold <arg>   Slow operation threshold in ms(default 50)
+   -t,--threads <arg>         Number of threads (default 4)
+   -u,--updates <arg>         Ratio of update operations (default 0)
+   -v,--workflow <arg>        Specify a set of ordered operations per thread
+                              from [iukp]
+   -w,--nosharding            Do not shard the collection
+   -x,--indexes <arg>         Number of secondary indexes - does not remove
+                              existing (default 0)
+```
+
 Requirements to Build
 ---------------------
   
