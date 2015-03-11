@@ -1,3 +1,6 @@
+Introduction
+------------
+
 This tool is to make it easy to answer many of the questions people have during a MongoDB 'Proof of Concept'
 
 How fast will it be on my hardware.
@@ -16,16 +19,18 @@ It is an alternative to YCSB which:
   This is NOT in any way an official MongoDB product or project.
   
   
-  Usage:
+Usage
+-----
   
   
   
-  Requirements to Build.
+Requirements to Build
+---------------------
   
-  commons-cli-1.2.jar
-  commons-codec-1.10.jar
-  gson-2.2.4.jar
-  loremipsum-1.0.jar (http://sourceforge.net/projects/loremipsum/files/)
-  mongo-java-driver-2.13.0.jar
+  * commons-cli-1.2.jar
+  * commons-codec-1.10.jar
+  * gson-2.2.4.jar
+  * loremipsum-1.0.jar (http://sourceforge.net/projects/loremipsum/files/)
+  * mongo-java-driver-2.13.0.jar
   
   
