@@ -1,6 +1,7 @@
 Introduction
 ------------
-
+ I shoudl add - this is open source and beta code - if you find bugs fix them and send me a pull request or let me know (johnlpag@gmail.com)
+ 
 This tool is to make it easy to answer many of the questions people have during a MongoDB 'Proof of Concept'
 
 * How fast will it be on my hardware.
@@ -8,8 +9,8 @@ This tool is to make it easy to answer many of the questions people have during 
 * How does MongoDB scale.
 * How does the High Availability Work ( *NB POCDriver does NOT YET have this part*)
 
-POCDriver a single JAR file which allows you to specify anf run a number of different workloads easily from the command line. It is intended to show how MongoDB should be used for various tasks and avoid's testing your own client code versus MongoDB's capailities. POCDriver is an alternative to YCSB which:
-  * Only works with MongoDB - showing what MongoDB can do rather than comparing lowest common denominator between systems.
+POCDriver a single JAR file which allows you to specify anf run a number of different workloads easily from the command line. It is intended to show how MongoDB should be used for various tasks and avoid's testing your own client code versus MongoDB's capailities. POCDriver is an alternative to using generic tools like YCSB. Unlike these tools POCDriver:
+  * Only works with MongoDB - showing what MongoDB can do rather than comparing lowest common denominator between systems that aren't directly comaprable.
   * Includes much more sopisticated workloads - using the appropriate MongoDB feature.
   
   This is NOT in any way an official MongoDB product or project.
