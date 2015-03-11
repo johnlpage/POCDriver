@@ -1,6 +1,6 @@
 Introduction
 ------------
- I shoudl add - this is open source and beta code - if you find bugs fix them and send me a pull request or let me know (johnlpag@gmail.com)
+This is open source, immature and undoubtably buggy code - if you find bugs fix them and send me a pull request or let me know (johnlpag@gmail.com)
  
 This tool is to make it easy to answer many of the questions people have during a MongoDB 'Proof of Concept'
 
