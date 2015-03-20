@@ -1,7 +1,7 @@
 Introduction
 ------------
 This is open source, immature and undoubtably buggy code - if you find bugs fix them and send me a pull request or let me know (johnlpag@gmail.com)
- 
+
 This tool is to make it easy to answer many of the questions people have during a MongoDB 'Proof of Concept'
 
 * How fast will it be on my hardware.
@@ -12,15 +12,26 @@ This tool is to make it easy to answer many of the questions people have during 
 POCDriver a single JAR file which allows you to specify anf run a number of different workloads easily from the command line. It is intended to show how MongoDB should be used for various tasks and avoid's testing your own client code versus MongoDB's capailities. POCDriver is an alternative to using generic tools like YCSB. Unlike these tools POCDriver:
   * Only works with MongoDB - showing what MongoDB can do rather than comparing lowest common denominator between systems that aren't directly comaprable.
   * Includes much more sopisticated workloads - using the appropriate MongoDB feature.
-  
+
   This is NOT in any way an official MongoDB product or project.
-  
-  
+
+Build
+-----
+
+Execute
+
+```
+$ mvn clean package
+```
+
+and you will find POCDriver.jar in bin folder.
+
+
 Usage
 -----
 ```
 $ java -jar POCDriver.jar --help
-  
+
   MongoDB Proof Of Concept - Load Generator
   usage: POCDriver
    -a,--arrays <arg>          Shape of any arrays in new sample records x:y
@@ -61,11 +72,11 @@ $ java -jar POCDriver.jar --help
 
 Requirements to Build
 ---------------------
-  
+
   * commons-cli-1.2.jar
   * commons-codec-1.10.jar
   * gson-2.2.4.jar
   * loremipsum-1.0.jar (http://sourceforge.net/projects/loremipsum/files/)
   * mongo-java-driver-2.13.0.jar
-  
-  
+
+
