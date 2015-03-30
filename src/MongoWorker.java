@@ -48,17 +48,35 @@ public class MongoWorker implements Runnable {
 			// it with the number of shards
 			int shardno = workerID % testOpts.numShards;
 			// Get the name of the shard
-			cr = admindb.command(new BasicDBObject("moveChunk",
+			DBCursor shardlist = mongoClient.getDB("config").getCollection("shards").find();
+			shardlist.skip(shardno);
+			shardlist.limit(1);
+			String shardName = new String("");
+			while (shardlist.hasNext()) {
+				BasicDBObject obj = (BasicDBObject) shardlist.next();
+				shardName = obj.getString("name");
+			}
+		
+			//
+		/*	cr = admindb.command(new BasicDBObject("moveChunk",
 					testOpts.databaseName + "." + testOpts.collectionName)
 					.append("find",
 							new BasicDBObject("_id", new BasicDBObject("w",
 									workerID).append("s", sequence + 1)))
-					.append("to", String.format("shard%04d", shardno)));
+					.append("to", String.format("shard_%d", shardno)));*/
+			
+					cr = admindb.command(new BasicDBObject("moveChunk",
+							testOpts.databaseName + "." + testOpts.collectionName)
+							.append("find",
+									new BasicDBObject("_id", new BasicDBObject("w",
+											workerID).append("s", sequence + 1)))
+							.append("to", shardName));
+			
 			if (cr.ok() == false) {
 				System.out.println(cr.getErrorMessage());
 				// return;
 			}
-			System.out.println("move to " + shardno);
+			System.out.println("moving chunk to " + shardName);
 		}
 	}
 
