@@ -89,6 +89,65 @@ Record shape options
 -l how many characters to haev in the text fields
 ```
 
+Example
+-------
+
+```
+MacPro:POCDriver jlp$ java -jar POCDriver.jar -p -a 3:4
+MongoDB Proof Of Concept - Load Generator
+{
+  "_id": {
+    "w": 1,
+    "i": 12345678
+  },
+  "fld0": 195727,
+  "fld1": {
+    "$date": "1993-11-20T04:21:16.218Z"
+  },
+  "fld2": "Stet clita kasd gubergren, no ",
+  "fld3": "rebum. Stet clita kasd gubergr",
+  "fld4": "takimata sanctus est Lorem ips",
+  "fld5": {
+    "$date": "2007-12-26T07:28:49.386Z"
+  },
+  "fld6": 53068,
+  "fld7": "et justo duo dolores et ea reb",
+  "fld8": "kasd gubergren, no sea takimat",
+  "fld9": 531837,
+  "arr": [
+    [0,0,0,0],
+    [0,0,0,0],
+    [0,0,0,0]
+  ]
+}
+
+
+MacPro:POCDriver jlp$ java -jar POCDriver.jar -k 20 -i 10 -u 10 -b 20
+MongoDB Proof Of Concept - Load Generator
+------------------------
+After 10 seconds, 20016 new records inserted - collection has 89733 in total 
+1925 inserts per second since last report 99.75 % in under 50 milliseconds
+3852 keyqueries per second since last report 99.99 % in under 50 milliseconds
+1949 updates per second since last report 99.84 % in under 50 milliseconds
+0 rangequeries per second since last report 100.00 % in under 50 milliseconds
+
+------------------------
+After 20 seconds, 53785 new records inserted - collection has 123502 in total 
+3377 inserts per second since last report 99.91 % in under 50 milliseconds
+6681 keyqueries per second since last report 99.99 % in under 50 milliseconds
+3322 updates per second since last report 99.94 % in under 50 milliseconds
+0 rangequeries per second since last report 100.00 % in under 50 milliseconds
+
+------------------------
+After 30 seconds, 69511 new records inserted - collection has 139228 in total 
+1571 inserts per second since last report 99.92 % in under 50 milliseconds
+3139 keyqueries per second since last report 99.99 % in under 50 milliseconds
+1595 updates per second since last report 99.94 % in under 50 milliseconds
+0 rangequeries per second since last report 100.00 % in under 50 milliseconds
+
+```
+
+
 Requirements to Build
 ---------------------
 
