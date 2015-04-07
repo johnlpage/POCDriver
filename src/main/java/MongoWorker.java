@@ -24,7 +24,7 @@ public class MongoWorker implements Runnable {
 	boolean workflowed = false;
 	String workflow;
 	int workflowStep = 0;
-	ArrayList <BasicDBObject> keyStack;
+	ArrayList<BasicDBObject> keyStack;
 
 	public void ReviewShards() {
 		if (testOpts.sharded && !testOpts.singleserver) {
@@ -39,44 +39,30 @@ public class MongoWorker implements Runnable {
 					.append("middle",
 							new BasicDBObject("_id", new BasicDBObject("w",
 									workerID).append("s", sequence + 1))));
-			if (cr.ok() == false) {
-				System.out.println(cr.getErrorMessage());
-				// return;
-			}
-			System.out.println("split at " + workerID + " " + sequence + 1);
+
 			// And move that to a shard - which shard? take my workerid and mod
 			// it with the number of shards
 			int shardno = workerID % testOpts.numShards;
 			// Get the name of the shard
-			DBCursor shardlist = mongoClient.getDB("config").getCollection("shards").find();
+
+			DBCursor shardlist = mongoClient.getDB("config")
+					.getCollection("shards").find();
 			shardlist.skip(shardno);
 			shardlist.limit(1);
 			String shardName = new String("");
 			while (shardlist.hasNext()) {
 				BasicDBObject obj = (BasicDBObject) shardlist.next();
-				shardName = obj.getString("name");
+				shardName = obj.getString("_id");
+
 			}
-		
-			//
-		/*	cr = admindb.command(new BasicDBObject("moveChunk",
+
+			cr = admindb.command(new BasicDBObject("moveChunk",
 					testOpts.databaseName + "." + testOpts.collectionName)
 					.append("find",
 							new BasicDBObject("_id", new BasicDBObject("w",
 									workerID).append("s", sequence + 1)))
-					.append("to", String.format("shard_%d", shardno)));*/
-			
-					cr = admindb.command(new BasicDBObject("moveChunk",
-							testOpts.databaseName + "." + testOpts.collectionName)
-							.append("find",
-									new BasicDBObject("_id", new BasicDBObject("w",
-											workerID).append("s", sequence + 1)))
-							.append("to", shardName));
-			
-			if (cr.ok() == false) {
-				System.out.println(cr.getErrorMessage());
-				// return;
-			}
-			System.out.println("moving chunk to " + shardName);
+					.append("to", shardName));
+
 		}
 	}
 
@@ -98,8 +84,7 @@ public class MongoWorker implements Runnable {
 			workflowed = true;
 			keyStack = new ArrayList<BasicDBObject>();
 		}
-		
-		
+
 	}
 
 	private int getHighestID() {
@@ -145,11 +130,12 @@ public class MongoWorker implements Runnable {
 	private BasicDBObject simpleKeyQuery() {
 		// Key Query
 		BasicDBObject query = new BasicDBObject();
-		int range = sequence *  testOpts.workingset / 100;
+		int range = sequence * testOpts.workingset / 100;
 		int rest = sequence - range;
-		
-		int recordno = rest + (int) Math.abs(Math.floor(rng.nextDouble() * range));
-		
+
+		int recordno = rest
+				+ (int) Math.abs(Math.floor(rng.nextDouble() * range));
+
 		query.append("_id",
 				new BasicDBObject("w", workerID).append("i", recordno));
 		Date starttime = new Date();
@@ -162,7 +148,7 @@ public class MongoWorker implements Runnable {
 				testResults.RecordSlowOp("keyqueries", 1);
 			}
 			testResults.RecordOpsDone("keyqueries", 1);
-		} 
+		}
 		return (BasicDBObject) myDoc;
 	}
 
@@ -215,7 +201,7 @@ public class MongoWorker implements Runnable {
 	}
 
 	private void updateSingleRecord(BulkWriteOperation bulkWriter) {
-		updateSingleRecord( bulkWriter, null);
+		updateSingleRecord(bulkWriter, null);
 	}
 
 	private void updateSingleRecord(BulkWriteOperation bulkWriter,
@@ -228,8 +214,9 @@ public class MongoWorker implements Runnable {
 		if (key == null) {
 			int range = sequence * testOpts.workingset / 100;
 			int rest = sequence - range;
-			
-			int recordno = rest + (int) Math.abs(Math.floor(rng.nextDouble() * range));
+
+			int recordno = rest
+					+ (int) Math.abs(Math.floor(rng.nextDouble() * range));
 
 			query.append("_id",
 					new BasicDBObject("w", workerID).append("i", recordno));
@@ -239,8 +226,7 @@ public class MongoWorker implements Runnable {
 		BasicDBObject fields = new BasicDBObject("fld0", changedfield);
 		BasicDBObject change = new BasicDBObject("$set", fields);
 
-		if(testOpts.findandmodify == false )
-		{
+		if (testOpts.findandmodify == false) {
 			bulkWriter.find(query).updateOne(change);
 		} else {
 			this.coll.findAndModify(query, change);
@@ -271,12 +257,12 @@ public class MongoWorker implements Runnable {
 			int bulkops = 0;
 
 			int c = 0;
-			//System.out.println("Child " + this.workerID + " running");
+			// System.out.println("Child " + this.workerID + " running");
 			while (testResults.GetSecondsElapsed() < testOpts.duration) {
 				c++;
 
 				if (workflowed == false) {
-					//System.out.println("Random op");
+					// System.out.println("Random op");
 					// Choose the type of op
 					int allops = testOpts.insertops + testOpts.keyqueries
 							+ testOpts.updates + testOpts.rangequeries
@@ -302,47 +288,47 @@ public class MongoWorker implements Runnable {
 						// An in place single field update
 						// fld 0 - set to random number
 						updateSingleRecord(bulkWriter);
-						if( testOpts.findandmodify == false)  bulkops++;
+						if (testOpts.findandmodify == false)
+							bulkops++;
 					}
 				} else {
 					// Following a preset workflow
-					String wfop = workflow.substring(workflowStep, workflowStep+1);
-					
-					//System.out.println("Executing workflow op [" + workflow + "] " + wfop);
-					if(wfop.equals("i"))
-					{
-						//Insert a new record, push it's key onto our stack
+					String wfop = workflow.substring(workflowStep,
+							workflowStep + 1);
+
+					// System.out.println("Executing workflow op [" + workflow +
+					// "] " + wfop);
+					if (wfop.equals("i")) {
+						// Insert a new record, push it's key onto our stack
 						TestRecord r = insertNewRecord(bulkWriter);
 						keyStack.add((BasicDBObject) r.get("_id"));
 						bulkops++;
-						//System.out.println("Insert");
-					} else if (wfop.equals("u")){
-						if(keyStack.size() > 0)
-						{
-							updateSingleRecord(bulkWriter,keyStack.get(keyStack.size()-1));
-							//System.out.println("Update");
-							if( testOpts.findandmodify == false) bulkops++;
+						// System.out.println("Insert");
+					} else if (wfop.equals("u")) {
+						if (keyStack.size() > 0) {
+							updateSingleRecord(bulkWriter,
+									keyStack.get(keyStack.size() - 1));
+							// System.out.println("Update");
+							if (testOpts.findandmodify == false)
+								bulkops++;
 						}
-					} else if (wfop.equals("p")){
-						//Pop the top thing off the stack
-						if(keyStack.size() > 0)
-						{
-							keyStack.remove(keyStack.size()-1);
+					} else if (wfop.equals("p")) {
+						// Pop the top thing off the stack
+						if (keyStack.size() > 0) {
+							keyStack.remove(keyStack.size() - 1);
 						}
-					} else if(wfop.equals("k"))
-					{
-						//Find a new record an put it on the stack
+					} else if (wfop.equals("k")) {
+						// Find a new record an put it on the stack
 						BasicDBObject r = simpleKeyQuery();
-						if(r != null){
-						keyStack.add((BasicDBObject) r.get("_id"));
+						if (r != null) {
+							keyStack.add((BasicDBObject) r.get("_id"));
 						}
 					}
 
-					//If we have reached the end of the wfops then reset
+					// If we have reached the end of the wfops then reset
 					workflowStep++;
-					if(workflowStep >= workflow.length())
-					{
-						workflowStep=0;
+					if (workflowStep >= workflow.length()) {
+						workflowStep = 0;
 						keyStack = new ArrayList<BasicDBObject>();
 					}
 				}
