@@ -24,7 +24,7 @@ public class POCDriver {
 			
 			if(testOpts.arrayupdates > 0 && (testOpts.arraytop<1 || testOpts.arraynext<1))
 			{
-				System.out.println("You must specify and array size to update arrays");
+				System.out.println("You must specify an array size to update arrays");
 				return;
 			}
 			//Sets up sample data dont remove
