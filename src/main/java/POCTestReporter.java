@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.HashMap;
 
+import com.mongodb.DB;
+import com.mongodb.DBCollection;
 import com.mongodb.MongoClient;
 
 public class POCTestReporter implements Runnable {
@@ -33,10 +35,26 @@ public class POCTestReporter implements Runnable {
 			}
 		}
 		
+		if (testOpts.sharded && !testOpts.singleserver) {
+		DB configdb = mongoClient.getDB("config");
+		DBCollection shards = configdb.getCollection("shards");
+		//DBCursor cursor = (DBCursor) shards.find();
+		int numShards = (int)shards.count();
+		
+		}
+		
 		Long insertsDone = testResults.GetOpsDone("inserts");
 		if (testResults.GetSecondsElapsed() < testOpts.reportTime)
 			return;
 		System.out.println("------------------------");
+		if (testOpts.sharded && !testOpts.singleserver) {
+			DB configdb = mongoClient.getDB("config");
+			DBCollection shards = configdb.getCollection("shards");
+			//DBCursor cursor = (DBCursor) shards.find();
+			int numShards = (int)shards.count();
+			//System.out.format("%d Shards in use\n",numShards);
+			testOpts.numShards = numShards;
+			}
 		System.out.format("After %d seconds, %d new records inserted - collection has %d in total \n",
 				testResults.GetSecondsElapsed(), insertsDone, testResults.initialCount + insertsDone);
 		

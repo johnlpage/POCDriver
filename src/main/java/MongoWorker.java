@@ -20,6 +20,7 @@ public class MongoWorker implements Runnable {
 	POCTestResults testResults;
 	int workerID;
 	int sequence;
+	int numShards = 0;
 	Random rng;
 	boolean workflowed = false;
 	String workflow;
@@ -33,13 +34,23 @@ public class MongoWorker implements Runnable {
 			// We can ensure we distribute our workers over out shards
 			// So we will tell mongo that's where we want our records to go
 			DB admindb = mongoClient.getDB("admin");
+			Boolean split = false;
 			CommandResult cr;
-			cr = admindb.command(new BasicDBObject("split",
-					testOpts.databaseName + "." + testOpts.collectionName)
-					.append("middle",
-							new BasicDBObject("_id", new BasicDBObject("w",
-									workerID).append("s", sequence + 1))));
+			while (split == false) {
 
+				cr = admindb.command(new BasicDBObject("split",
+						testOpts.databaseName + "." + testOpts.collectionName)
+						.append("middle",
+								new BasicDBObject("_id", new BasicDBObject("w",
+										workerID).append("i", sequence + 1))));
+
+				if (cr.ok() == false) {
+					//System.out.println(cr);
+					try { Thread.sleep(1000); } catch (Exception e){}
+				} else {
+					split = true;
+				}
+			}
 			// And move that to a shard - which shard? take my workerid and mod
 			// it with the number of shards
 			int shardno = workerID % testOpts.numShards;
@@ -55,14 +66,28 @@ public class MongoWorker implements Runnable {
 				shardName = obj.getString("_id");
 
 			}
-
-			cr = admindb.command(new BasicDBObject("moveChunk",
-					testOpts.databaseName + "." + testOpts.collectionName)
-					.append("find",
-							new BasicDBObject("_id", new BasicDBObject("w",
-									workerID).append("s", sequence + 1)))
-					.append("to", shardName));
-
+		
+			boolean move = false;
+			while (move == false) {
+				cr = admindb.command(new BasicDBObject("moveChunk",
+						testOpts.databaseName + "." + testOpts.collectionName)
+						.append("find",
+								new BasicDBObject("_id", new BasicDBObject("w",
+										workerID).append("i", sequence + 1)))
+						.append("to", shardName));
+				if (cr.ok() == false
+						&& cr.getErrorMessage().equals(
+								"that chunk is already on that shard") == false) {
+					//System.out.println(cr);
+				} else {
+					move = true;
+					try { Thread.sleep(1000); } catch (Exception e){}
+				}
+			}
+		
+		//System.out.println("Moved {w:" + workerID + ",i:" + (sequence + 1)
+		//		+ "} to " + shardName);
+		numShards = testOpts.numShards;
 		}
 	}
 
@@ -337,6 +362,10 @@ public class MongoWorker implements Runnable {
 					if (bulkops > 0) {
 						bulkWriter = flushBulkOps(bulkWriter);
 						bulkops = 0;
+						// Check and see if we need to rejig sharding
+						if (numShards != testOpts.numShards) {
+							ReviewShards();
+						}
 					}
 				}
 
