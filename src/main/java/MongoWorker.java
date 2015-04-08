@@ -1,21 +1,28 @@
+
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Random;
 
-import com.mongodb.BasicDBObject;
-import com.mongodb.BulkWriteOperation;
-import com.mongodb.BulkWriteResult;
-import com.mongodb.CommandResult;
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
-import com.mongodb.DBCursor;
+import org.bson.Document;
+
 import com.mongodb.MongoClient;
+import com.mongodb.bulk.BulkWriteResult;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.InsertOneModel;
+import com.mongodb.client.model.UpdateOneModel;
+import com.mongodb.client.model.WriteModel;
+
+import static com.mongodb.client.model.Projections.*;
+import static com.mongodb.client.model.Sorts.*;
 
 public class MongoWorker implements Runnable {
 
 	MongoClient mongoClient;
-	DB db;
-	DBCollection coll;
+	MongoDatabase db;
+	MongoCollection<Document>  coll;
 	POCTestOptions testOpts;
 	POCTestResults testResults;
 	int workerID;
@@ -25,7 +32,7 @@ public class MongoWorker implements Runnable {
 	boolean workflowed = false;
 	String workflow;
 	int workflowStep = 0;
-	ArrayList<BasicDBObject> keyStack;
+	ArrayList<Document> keyStack;
 
 	public void ReviewShards() {
 		if (testOpts.sharded && !testOpts.singleserver) {
@@ -33,18 +40,18 @@ public class MongoWorker implements Runnable {
 			// faster and
 			// We can ensure we distribute our workers over out shards
 			// So we will tell mongo that's where we want our records to go
-			DB admindb = mongoClient.getDB("admin");
+			MongoDatabase admindb = mongoClient.getDatabase("admin");
 			Boolean split = false;
-			CommandResult cr;
+			Document cr;
 			while (split == false) {
 
-				cr = admindb.command(new BasicDBObject("split",
+				cr = admindb.runCommand(new Document("split",
 						testOpts.databaseName + "." + testOpts.collectionName)
 						.append("middle",
-								new BasicDBObject("_id", new BasicDBObject("w",
+								new Document("_id", new Document("w",
 										workerID).append("i", sequence + 1))));
 
-				if (cr.ok() == false) {
+				if (cr.getInteger("ok") == 0) {
 					//System.out.println(cr);
 					try { Thread.sleep(1000); } catch (Exception e){}
 				} else {
@@ -56,29 +63,28 @@ public class MongoWorker implements Runnable {
 			int shardno = workerID % testOpts.numShards;
 			// Get the name of the shard
 
-			DBCursor shardlist = mongoClient.getDB("config")
-					.getCollection("shards").find();
-			shardlist.skip(shardno);
-			shardlist.limit(1);
+			MongoCursor<Document> shardlist = mongoClient.getDatabase("config")
+					.getCollection("shards").find().skip(shardno).limit(1).iterator();
 			String shardName = new String("");
 			while (shardlist.hasNext()) {
-				BasicDBObject obj = (BasicDBObject) shardlist.next();
+				Document obj = shardlist.next();
 				shardName = obj.getString("_id");
 
 			}
 		
 			boolean move = false;
 			while (move == false) {
-				cr = admindb.command(new BasicDBObject("moveChunk",
+				cr = admindb.runCommand(new Document("moveChunk",
 						testOpts.databaseName + "." + testOpts.collectionName)
 						.append("find",
-								new BasicDBObject("_id", new BasicDBObject("w",
+								new Document("_id", new Document("w",
 										workerID).append("i", sequence + 1)))
 						.append("to", shardName));
-				if (cr.ok() == false
-						&& cr.getErrorMessage().equals(
+				System.out.println(cr.toJson());
+				if (cr.getInteger("ok") == 0
+						&& cr.getString("errorMessage") .equals(
 								"that chunk is already on that shard") == false) {
-					//System.out.println(cr);
+					System.out.println(cr.toJson());
 				} else {
 					move = true;
 					try { Thread.sleep(1000); } catch (Exception e){}
@@ -96,7 +102,7 @@ public class MongoWorker implements Runnable {
 		testOpts = t;
 		testResults = r;
 		workerID = id;
-		db = mongoClient.getDB(testOpts.databaseName);
+		db = mongoClient.getDatabase(testOpts.databaseName);
 		coll = db.getCollection(testOpts.collectionName);
 		// id
 		sequence = getHighestID();
@@ -107,34 +113,69 @@ public class MongoWorker implements Runnable {
 		if (testOpts.workflow != null) {
 			workflow = testOpts.workflow;
 			workflowed = true;
-			keyStack = new ArrayList<BasicDBObject>();
+			keyStack = new ArrayList<Document>();
 		}
 
 	}
 
 	private int getHighestID() {
 		int rval = 0;
-		BasicDBObject query = new BasicDBObject();
+		Document query = new Document();
 
-		BasicDBObject limits = new BasicDBObject("$gt", new BasicDBObject("w",
+		//TODO Refactor the query for 3.0 driver
+		Document limits = new Document("$gt", new Document("w",
 				workerID));
-		limits.append("$lt", new BasicDBObject("w", workerID + 1));
+		limits.append("$lt", new Document("w", workerID + 1));
+		
 		query.append("_id", limits);
 
-		BasicDBObject myDoc = (BasicDBObject) coll.findOne(query,
-				new BasicDBObject("_id", 1), new BasicDBObject("_id", -1));
+		Document myDoc = (Document) coll.find(query).projection(include("_id"))
+													.sort(descending("_id"))
+													.first();
 		if (myDoc != null) {
-			BasicDBObject id = (BasicDBObject) myDoc.get("_id");
-			rval = id.getInt("i") + 1;
+			Document id = (Document) myDoc.get("_id");
+			rval = id.getInteger("i") + 1;
 		}
 		return rval;
 	}
 
-	private BulkWriteOperation flushBulkOps(BulkWriteOperation bulkWriter) {
+	//This one was a major rewrite as the whole Bulk Ops API changed in 3.0
+	
+	private boolean flushBulkOps(List<WriteModel<Document>> bulkWriter) {
 		// Time this.
 
 		Date starttime = new Date();
-		BulkWriteResult bwResult = bulkWriter.execute();
+		
+		//This is where ALL writes are happening
+				
+		//So this can fail part way through if we have a failover
+		//In which case we resubmit it
+		
+		boolean submitted = false;
+		BulkWriteResult bwResult=null;
+	
+		while(submitted == false )
+		{
+			try
+			{
+				 submitted = true;
+				 bwResult = coll.bulkWrite(bulkWriter);
+			}
+			catch (Exception e)
+			{
+				//I need to resubmit it here
+				System.out.println("Exception: " + e.getMessage());
+				if(bwResult != null)
+				{
+					System.out.println(bwResult.toString());
+					submitted = false;
+				} else {
+					System.out.println("No result returned");
+					submitted = false;
+				}
+			}
+		}
+		
 		Date endtime = new Date();
 
 		Long taken = endtime.getTime() - starttime.getTime();
@@ -149,12 +190,13 @@ public class MongoWorker implements Runnable {
 			testResults.RecordSlowOp("updates", ucount);
 		}
 		testResults.RecordOpsDone("inserts", icount);
-		return coll.initializeUnorderedBulkOperation();
+		return true;
+		
 	}
 
-	private BasicDBObject simpleKeyQuery() {
+	private Document simpleKeyQuery() {
 		// Key Query
-		BasicDBObject query = new BasicDBObject();
+		Document query = new Document();
 		int range = sequence * testOpts.workingset / 100;
 		int rest = sequence - range;
 
@@ -162,9 +204,9 @@ public class MongoWorker implements Runnable {
 				+ (int) Math.abs(Math.floor(rng.nextDouble() * range));
 
 		query.append("_id",
-				new BasicDBObject("w", workerID).append("i", recordno));
+				new Document("w", workerID).append("i", recordno));
 		Date starttime = new Date();
-		BasicDBObject myDoc = (BasicDBObject) coll.findOne(query);
+		Document myDoc = (Document) coll.find(query).first();
 		if (myDoc != null) {
 
 			Date endtime = new Date();
@@ -174,22 +216,21 @@ public class MongoWorker implements Runnable {
 			}
 			testResults.RecordOpsDone("keyqueries", 1);
 		}
-		return (BasicDBObject) myDoc;
+		return (Document) myDoc;
 	}
 
 	private void rangeQuery() {
 		// Key Query
-		BasicDBObject query = new BasicDBObject();
+		Document query = new Document();
 		int recordno = (int) Math.abs(Math.floor(rng.nextDouble() * sequence));
-		query.append("_id", new BasicDBObject("$gt", new BasicDBObject("w",
+		query.append("_id", new Document("$gt", new Document("w",
 				workerID).append("i", recordno)));
 		Date starttime = new Date();
-		DBCursor cursor = (DBCursor) coll.find(query);
-		cursor.limit(20);
+		MongoCursor<Document>  cursor = coll.find(query).limit(20).iterator();
 		while (cursor.hasNext()) {
 
 			@SuppressWarnings("unused")
-			BasicDBObject obj = (BasicDBObject) cursor.next();
+			Document obj = cursor.next();
 		}
 
 		Date endtime = new Date();
@@ -201,13 +242,13 @@ public class MongoWorker implements Runnable {
 
 	}
 
-	private void incrementArrayValue(BulkWriteOperation bulkWriter) {
+	private void incrementArrayValue(List<? super WriteModel<Document>> bulkWriter) {
 		// Key Query
-		BasicDBObject query = new BasicDBObject();
+		Document query = new Document();
 		int recordno = (int) Math.abs(Math.floor(rng.nextDouble() * sequence));
 
 		query.append("_id",
-				new BasicDBObject("w", workerID).append("i", recordno));
+				new Document("w", workerID).append("i", recordno));
 
 		int outerIndex;
 		int innerIndex;
@@ -216,23 +257,25 @@ public class MongoWorker implements Runnable {
 		innerIndex = (int) Math.abs(Math.floor(rng.nextDouble()
 				* testOpts.arraynext));
 
-		BasicDBObject fields = new BasicDBObject("arr." + outerIndex + "."
+		Document fields = new Document("arr." + outerIndex + "."
 				+ innerIndex, 1);
-		BasicDBObject change = new BasicDBObject("$inc", fields);
+		Document change = new Document("$inc", fields);
 
-		bulkWriter.find(query).updateOne(change);
+
+		bulkWriter.add(new UpdateOneModel<Document>(query,change));
+                
 		testResults.RecordOpsDone("updates", 1);
 
 	}
 
-	private void updateSingleRecord(BulkWriteOperation bulkWriter) {
+	private void updateSingleRecord(List<WriteModel<Document>>  bulkWriter) {
 		updateSingleRecord(bulkWriter, null);
 	}
 
-	private void updateSingleRecord(BulkWriteOperation bulkWriter,
-			BasicDBObject key) {
+	private void updateSingleRecord(List<WriteModel<Document>>  bulkWriter,
+			Document key) {
 		// Key Query
-		BasicDBObject query = new BasicDBObject();
+		Document query = new Document();
 		long changedfield = (long) Math.abs(Math.floor(rng.nextDouble()
 				* testOpts.NUMBER_SIZE));
 
@@ -244,23 +287,23 @@ public class MongoWorker implements Runnable {
 					+ (int) Math.abs(Math.floor(rng.nextDouble() * range));
 
 			query.append("_id",
-					new BasicDBObject("w", workerID).append("i", recordno));
+					new Document("w", workerID).append("i", recordno));
 		} else {
 			query.append("_id", key);
 		}
-		BasicDBObject fields = new BasicDBObject("fld0", changedfield);
-		BasicDBObject change = new BasicDBObject("$set", fields);
+		Document fields = new Document("fld0", changedfield);
+		Document change = new Document("$set", fields);
 
 		if (testOpts.findandmodify == false) {
-			bulkWriter.find(query).updateOne(change);
+			bulkWriter.add(new UpdateOneModel<Document>(query,change));
 		} else {
-			this.coll.findAndModify(query, change);
+			this.coll.findOneAndUpdate(query, change); //These are immediate not batches
 		}
 		testResults.RecordOpsDone("updates", 1);
 
 	}
 
-	private TestRecord insertNewRecord(BulkWriteOperation bulkWriter) {
+	private TestRecord insertNewRecord(List<WriteModel<Document>>  bulkWriter) {
 		TestRecord tr;
 		int[] arr = new int[2];
 		arr[0] = testOpts.arraytop;
@@ -268,17 +311,17 @@ public class MongoWorker implements Runnable {
 		tr = new TestRecord(testOpts.numFields, testOpts.textFieldLen,
 				workerID, sequence++, testOpts.NUMBER_SIZE, testOpts.numShards,
 				arr);
-		bulkWriter.insert(tr);
+		bulkWriter.add(new InsertOneModel<Document>(tr.internalDoc));
 		return tr;
 	}
 
 	@Override
 	public void run() {
 		// Use a bulk inserter - even if ony for one
-		BulkWriteOperation bulkWriter;
+		List<WriteModel<Document>>  bulkWriter;
 
 		try {
-			bulkWriter = coll.initializeUnorderedBulkOperation();
+			bulkWriter = new ArrayList<WriteModel<Document>>();
 			int bulkops = 0;
 
 			int c = 0;
@@ -326,7 +369,7 @@ public class MongoWorker implements Runnable {
 					if (wfop.equals("i")) {
 						// Insert a new record, push it's key onto our stack
 						TestRecord r = insertNewRecord(bulkWriter);
-						keyStack.add((BasicDBObject) r.get("_id"));
+						keyStack.add((Document) r.internalDoc.get("_id"));
 						bulkops++;
 						// System.out.println("Insert");
 					} else if (wfop.equals("u")) {
@@ -344,9 +387,9 @@ public class MongoWorker implements Runnable {
 						}
 					} else if (wfop.equals("k")) {
 						// Find a new record an put it on the stack
-						BasicDBObject r = simpleKeyQuery();
+						Document r = simpleKeyQuery();
 						if (r != null) {
-							keyStack.add((BasicDBObject) r.get("_id"));
+							keyStack.add((Document) r.get("_id"));
 						}
 					}
 
@@ -354,13 +397,17 @@ public class MongoWorker implements Runnable {
 					workflowStep++;
 					if (workflowStep >= workflow.length()) {
 						workflowStep = 0;
-						keyStack = new ArrayList<BasicDBObject>();
+						keyStack = new ArrayList<Document>();
 					}
 				}
 
 				if (c % testOpts.batchSize == 0) {
 					if (bulkops > 0) {
-						bulkWriter = flushBulkOps(bulkWriter);
+						if( flushBulkOps(bulkWriter) == false)
+						{
+						// Handle the case where we had a problem
+						}
+						bulkWriter.clear();
 						bulkops = 0;
 						// Check and see if we need to rejig sharding
 						if (numShards != testOpts.numShards) {

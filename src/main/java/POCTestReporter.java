@@ -1,12 +1,18 @@
+
+
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.HashMap;
 
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
+import org.bson.Document;
+
 import com.mongodb.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+
+
 
 public class POCTestReporter implements Runnable {
 	POCTestResults testResults;
@@ -35,24 +41,15 @@ public class POCTestReporter implements Runnable {
 			}
 		}
 		
-		if (testOpts.sharded && !testOpts.singleserver) {
-		DB configdb = mongoClient.getDB("config");
-		DBCollection shards = configdb.getCollection("shards");
-		//DBCursor cursor = (DBCursor) shards.find();
-		int numShards = (int)shards.count();
-		
-		}
-		
+
 		Long insertsDone = testResults.GetOpsDone("inserts");
 		if (testResults.GetSecondsElapsed() < testOpts.reportTime)
 			return;
 		System.out.println("------------------------");
 		if (testOpts.sharded && !testOpts.singleserver) {
-			DB configdb = mongoClient.getDB("config");
-			DBCollection shards = configdb.getCollection("shards");
-			//DBCursor cursor = (DBCursor) shards.find();
+			MongoDatabase configdb = mongoClient.getDatabase("config");
+			MongoCollection<Document>  shards = configdb.getCollection("shards");
 			int numShards = (int)shards.count();
-			//System.out.format("%d Shards in use\n",numShards);
 			testOpts.numShards = numShards;
 			}
 		System.out.format("After %d seconds, %d new records inserted - collection has %d in total \n",

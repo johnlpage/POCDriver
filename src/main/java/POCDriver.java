@@ -1,11 +1,15 @@
+
+
 import org.apache.commons.cli.ParseException;
-import org.bson.BSON;
+import org.bson.BsonBinaryWriter;
+import org.bson.codecs.DocumentCodec;
+import org.bson.codecs.EncoderContext;
+import org.bson.io.BasicOutputBuffer;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
-import com.mongodb.util.JSON;
 
 public class POCDriver {
 
@@ -37,11 +41,13 @@ public class POCDriver {
 				//System.out.println(tr);
 				Gson gson = new GsonBuilder().setPrettyPrinting().create();
 				JsonParser jp = new JsonParser();
-				JsonElement je = jp.parse(tr.toString());
-				//TODO Collapse inner newlines
+				JsonElement je = jp.parse(tr.internalDoc.toJson());
+				
 				String json = gson.toJson(je);
 				StringBuilder newJson = new StringBuilder();
 				int arrays = 0;
+				
+				// Collapse inner newlines
 				boolean inquotes = false;
 				for(int c=0;c<json.length();c++)
 				{
@@ -57,12 +63,19 @@ public class POCDriver {
 					if(arrays > 1 && !inquotes && inChar == ' ' ) { continue;}
 					newJson.append(json.charAt(c));
 				}
+				
 				if(testOpts.printOnly)
 				{
 				System.out.println(newJson.toString());
-				byte[] b = BSON.encode(tr);
+				//Thanks to Ross Lawley for this bit of black magic
+				
+				BasicOutputBuffer buffer = new BasicOutputBuffer();
+				BsonBinaryWriter binaryWriter = new BsonBinaryWriter(buffer);
+				new DocumentCodec().encode(binaryWriter, tr.internalDoc, EncoderContext.builder().build());
+				int length = binaryWriter.getBsonOutput().getSize();
+				
 				System.out.println(String.format("Records are %.2f KB each as BSON",
-						(float)new Float(b.length) / 1024,2));
+						(float)new Float(length) / 1024,2));
 				
 				
 			 return;

@@ -1,15 +1,18 @@
+
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Random;
-
+import org.bson.Document;
 import de.svenjacobs.loremipsum.LoremIpsum;
 
-import com.mongodb.BasicDBObject;
+
 
 //A Test Record is a MongoDB Record Object that is self populating
 @SuppressWarnings("serial")
-public class TestRecord extends BasicDBObject {
+public class TestRecord {
 
+	Document internalDoc;
 	Random rng;
 	final double VOCAB_SIZE = 100000;
 	final int loremLen = 512;
@@ -29,14 +32,15 @@ public class TestRecord extends BasicDBObject {
 		
 		StringBuilder sb = new StringBuilder();
 		Double d = rng.nextDouble();
-	//	System.out.println(d);
+
 		int r = (int) Math.abs(Math.floor( d * (loremText.length() - (loremLen + 20)))); 
 		int e = r + loremLen;
-		//System.out.println(loremText.length() + " " + r + " " + e);
+		
 		while(loremText.charAt(r) != ' ') r++; r++;
-		while(loremText.charAt(e) != ' ') e++;
-		String chunk = loremText.substring(r, e+1);
-			sb.append(chunk);
+		while(loremText.charAt(e) != ' ') e++;;
+		String chunk = loremText.substring(r, e);
+	
+		sb.append(chunk);
 		
 		
 		//Double to size
@@ -49,6 +53,12 @@ public class TestRecord extends BasicDBObject {
 		
 		//Trim to fit
 		String rs = sb.toString().substring(0,length);
+		
+		//Remove partial words
+		r=0;
+		e=rs.length() -1;
+		while(rs.charAt(e) != ' ') e--;;
+		rs = rs.substring(r, e);
 		return rs;
 	}
 
@@ -58,10 +68,8 @@ public class TestRecord extends BasicDBObject {
 	// A thread starting will find out what it's highest was
 
 	public void AddOID(int workerid, int sequence) {
-		BasicDBObject oid = new BasicDBObject();
-		oid.append("w", workerid);
-		oid.append("i", sequence);
-		this.append("_id", oid);
+		Document oid = new Document("w",workerid).append("i", sequence);
+		internalDoc.append("_id", oid);
 	}
 
 	// Just so we always know what the type of a given field is
@@ -93,6 +101,7 @@ public class TestRecord extends BasicDBObject {
 
 	public TestRecord(int nFields, int fieldSize, int workerID, int sequence,
 			long numberSize, int numShards, int[] array) {
+		internalDoc = new Document();
 		rng = new Random();
 		int fieldNo;
 		// Always a field 0
@@ -105,7 +114,7 @@ public class TestRecord extends BasicDBObject {
 				long r = (long) Math.abs(Math.floor(rng.nextGaussian()
 						* numberSize));
 
-				this.append("fld" + fieldNo, r);
+				internalDoc.append("fld" + fieldNo, r);
 			} else if (fieldNo == 1 || fType == 2) // Field 2 is always a date
 													// as is every 5th
 			{
@@ -118,11 +127,11 @@ public class TestRecord extends BasicDBObject {
 				t = (long) (t - Math
 						.abs(Math.floor(rng.nextGaussian() * 100000000 * 3000)));
 				now.setTime(t);
-				this.append("fld" + fieldNo, now);
+				internalDoc.append("fld" + fieldNo, now);
 			} else {
 				// put in a string
 				String fieldContent = CreateString(fieldSize, fieldNo);
-				this.append("fld" + fieldNo, fieldContent);
+				internalDoc.append("fld" + fieldNo, fieldContent);
 			}
 		}
 		if (array[0] > 0) {
@@ -136,7 +145,7 @@ public class TestRecord extends BasicDBObject {
 					ar.add(sa);
 				}
 			}
-			this.append("arr", ar);
+			internalDoc.append("arr", ar);
 		}
 	}
 

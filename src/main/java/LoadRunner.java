@@ -1,18 +1,23 @@
 
-import java.net.UnknownHostException;
+
+
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import com.mongodb.BasicDBObject;
-import com.mongodb.CommandResult;
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
+import org.bson.Document;
+
 
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
 
+import static com.mongodb.client.model.Filters.*;
+
+//TODO - Change from System.println to a logging framework?
 
 public class LoadRunner {
 
@@ -21,10 +26,10 @@ public class LoadRunner {
 
 	private void PrepareSystem(POCTestOptions testOpts,POCTestResults results)
 	{
-		DB db;
-		DBCollection coll;
+		MongoDatabase db;
+		MongoCollection<Document>  coll;
 		//Create indexes and suchlike
-		db = mongoClient.getDB(testOpts.databaseName);
+		db = mongoClient.getDatabase(testOpts.databaseName);
 		coll = db.getCollection(testOpts.collectionName);
 		if(testOpts.emptyFirst)
 		{
@@ -33,7 +38,7 @@ public class LoadRunner {
 		
 		for(int x=0;x<testOpts.secondaryidx;x++)
 		{
-			coll.createIndex(new BasicDBObject("fld"+x,1));
+			coll.createIndex(new Document("fld"+x,1));
 		}
 		
 		results.initialCount = coll.count();
@@ -48,45 +53,46 @@ public class LoadRunner {
 	
 	private void ConfigureSharding(POCTestOptions testOpts)
 	{
-		DB admindb = mongoClient.getDB("admin");
-		CommandResult cr = admindb.command("serverStatus");
-		if(cr.ok() == false)
+		MongoDatabase admindb = mongoClient.getDatabase("admin");
+		Document cr = admindb.runCommand(new Document("serverStatus",1));
+		if(cr.getDouble("ok") == 0)
 		{
-			//System.out.println(cr.getErrorMessage());
+			System.out.println(cr.toJson());
 			return;
 		}
-		//System.out.println(cr);
+
 		if (cr.get("process").equals("mongos"))
 		{
-			//System.out.println("Sharded System");
 			testOpts.sharded = true;
-			//Turn the auto balancer off - good apps rarely need it
-			DB configdb = mongoClient.getDB("config");
+			//Turn the auto balancer off - good code rarely needs it running constantly 
+			MongoDatabase configdb = mongoClient.getDatabase("config");
 			if(configdb != null)
 			{
-				DBCollection settings = configdb.getCollection("settings");
-				settings.update(new BasicDBObject("_id","balancer"), new BasicDBObject("$set",new BasicDBObject("stopped",true)),true,false);
+				MongoCollection<Document>  settings = configdb.getCollection("settings");
+				settings.updateOne(eq("_id","balancer"), new Document("$set",new Document("stopped",true)));
 				//System.out.println("Balancer disabled");
 			}
-			cr = admindb.command(new BasicDBObject("enableSharding",testOpts.databaseName));
-			if(cr.ok() == false)
+			cr = admindb.runCommand(new Document("enableSharding",testOpts.databaseName));
+			if(cr.getDouble("ok") == 0)
 			{
+				//TODO Handle Genuine fails
 				//System.out.println(cr.getErrorMessage());
 				//return;
 			}
 			
 			
-			cr = admindb.command(new BasicDBObject("shardCollection",
-					testOpts.databaseName+"."+testOpts.collectionName).append("key", new BasicDBObject("_id",1)));
-			if(cr.ok() == false)
+			cr = admindb.runCommand(new Document("shardCollection",
+					testOpts.databaseName+"."+testOpts.collectionName).append("key", new Document("_id",1)));
+			if(cr.getDouble("ok") == 0)
 			{
-				System.out.println(cr.getErrorMessage());
+				//TODO - handle genuine fails
+				//System.out.println(cr.getErrorMessage());
 				//return;
 			}
 			
 			//See how many shards we have in the system - and get a list of their names
 			
-			DBCollection shards = configdb.getCollection("shards");
+			MongoCollection<Document>  shards = configdb.getCollection("shards");
 			//DBCursor cursor = (DBCursor) shards.find();
 			testOpts.numShards = (int)shards.count();
 		}
@@ -126,8 +132,8 @@ public class LoadRunner {
 		try {
 			mongoClient = new MongoClient(new MongoClientURI(
 					testOpts.connectionDetails));
-		} catch (UnknownHostException e) {
-			// TODO Move this out
+		} catch (Exception e) {
+		
 			e.printStackTrace();
 		}
 	}
