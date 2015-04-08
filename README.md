@@ -1,3 +1,6 @@
+***NOTE***
+Recently upgraded to MongoDB 3.0.0 Driver and still undergoing testing and refactoring so less stable than it was right now.
+
 Introduction
 ------------
 This is open source, immature, and undoubtably buggy code - if you find bugs fix them and send me a pull request or let me know (johnlpage@gmail.com)
