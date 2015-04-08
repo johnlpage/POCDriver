@@ -1,5 +1,7 @@
 
 
+import java.util.logging.LogManager;
+
 import org.apache.commons.cli.ParseException;
 import org.bson.BsonBinaryWriter;
 import org.bson.codecs.DocumentCodec;
@@ -17,7 +19,7 @@ public class POCDriver {
 		
 		POCTestOptions testOpts;
 		POCTestResults testResults = new POCTestResults();
-		
+		LogManager.getLogManager().reset();
 		System.out.println("MongoDB Proof Of Concept - Load Generator");
 		try {
 			testOpts = new POCTestOptions(args);
