@@ -60,7 +60,8 @@ public class MongoWorker implements Runnable {
 					{
 						split = true;
 					} else {
-						System.out.println(e.getMessage());
+						if(e.getMessage().contains("could not aquire collection lock") == false )
+							System.out.println(e.getMessage());
 						try { Thread.sleep(1000); } catch (Exception f) {}
 					}
 				}
@@ -97,7 +98,8 @@ public class MongoWorker implements Runnable {
 					{
 						move = true;
 					} else {
-						System.out.println(e.getMessage());
+						if(e.getMessage().contains("could not aquire collection lock") == false )
+							System.out.println(e.getMessage());
 						try { Thread.sleep(1000); } catch (Exception g){}
 					}
 				}
