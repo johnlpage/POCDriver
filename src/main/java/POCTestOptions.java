@@ -18,6 +18,7 @@ public class POCTestOptions {
 	int slowThreshold = 50;
 	boolean logstats = false;
 	int insertops = 100;
+	int bucketFetchOps=0;
 	int keyqueries = 0;
 	int arrayupdates = 0;
 	int updates = 0;
@@ -36,6 +37,8 @@ public class POCTestOptions {
 	int secondaryidx=0;
 	int arraytop = 0;
 	int arraynext = 0;
+	int	bucketSize = 0;
+	int numBuckets = 0;
 	boolean findandmodify=false;
 	int workingset = 100;
 	boolean helpOnly = false;
@@ -64,6 +67,7 @@ public class POCTestOptions {
 		cliopt.addOption("n","namespace",true,"Namespace to use , for example myDatabase.myCollection");
 		cliopt.addOption("o","logfile",true,"Output stats to  <file> ");
 		cliopt.addOption("p","print",false,"Print out a sample record according to the other parameters then quit");
+		cliopt.addOption("q","bucket",true,"arg if b:s so -q 10000:100 means write to 10,000 buckets size 100");
 		cliopt.addOption("r","rangequeries",true,"Ratio of range query operations (default 0)");
 		cliopt.addOption("s","slowthreshold",true,"Slow operation threshold in ms(default 50)");
 		cliopt.addOption("t","threads",true,"Number of threads (default 4)");
@@ -71,9 +75,15 @@ public class POCTestOptions {
 		cliopt.addOption("v","workflow",true,"Specify a set of ordered operations per thread from [iukp]");
 		cliopt.addOption("w","nosharding",false,"Do not shard the collection");
 		cliopt.addOption("x","indexes",true,"Number of secondary indexes - does not remove existing (default 0)");
+		cliopt.addOption("z","bucketfetch",true,"Ratio of fetch whole bucket ops");
 		CommandLine cmd = parser.parse(cliopt, args);
 		
 
+		if(cmd.hasOption("z"))
+		{
+			bucketFetchOps = Integer.parseInt(cmd.getOptionValue("z"));
+		}
+		
 		
 		if(cmd.hasOption("j"))
 		{
@@ -109,6 +119,19 @@ public class POCTestOptions {
 			}
 			arraytop = Integer.parseInt(parts[0]);
 			arraynext = Integer.parseInt(parts[1]);
+		}
+		
+		if(cmd.hasOption("q"))
+		{
+			String ao = cmd.getOptionValue("q");
+			String[] parts = ao.split(":");
+			if(parts.length != 2)
+			{
+				System.err.println("bucket format is 'buckets:size'");
+				System.exit(1);
+			}
+			numBuckets = Integer.parseInt(parts[0]);
+			bucketSize = Integer.parseInt(parts[1]);
 		}
 		
 		if(cmd.hasOption("e"))

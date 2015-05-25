@@ -9,7 +9,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.bson.Document;
 
-
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
 import com.mongodb.client.MongoCollection;
@@ -34,6 +33,11 @@ public class LoadRunner {
 		if(testOpts.emptyFirst)
 		{
 			coll.drop();
+		}
+		
+		if(testOpts.numBuckets>0)
+		{
+			coll.createIndex(new Document("bucket",1).append("count", 1));
 		}
 		
 		for(int x=0;x<testOpts.secondaryidx;x++)
@@ -72,23 +76,25 @@ public class LoadRunner {
 				settings.updateOne(eq("_id","balancer"), new Document("$set",new Document("stopped",true)));
 				//System.out.println("Balancer disabled");
 			}
-			cr = admindb.runCommand(new Document("enableSharding",testOpts.databaseName));
-			if(cr.getDouble("ok") == 0)
+			try {
+				cr = admindb.runCommand(new Document("enableSharding",testOpts.databaseName));
+			} catch (Exception e)
 			{
-				//TODO Handle Genuine fails
-				//System.out.println(cr.getErrorMessage());
-				//return;
+				if(!e.getMessage().contains("already enabled"))
+					System.out.println(e.getMessage());
 			}
 			
+
 			
+			try{
 			cr = admindb.runCommand(new Document("shardCollection",
 					testOpts.databaseName+"."+testOpts.collectionName).append("key", new Document("_id",1)));
-			if(cr.getDouble("ok") == 0)
+			} catch (Exception e)
 			{
-				//TODO - handle genuine fails
-				//System.out.println(cr.getErrorMessage());
-				//return;
+				if(!e.getMessage().contains("already sharded"))
+					System.out.println(e.getMessage());
 			}
+
 			
 			//See how many shards we have in the system - and get a list of their names
 			

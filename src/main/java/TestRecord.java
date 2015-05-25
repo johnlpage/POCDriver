@@ -62,8 +62,15 @@ public class TestRecord {
 		return rs;
 	}
 
+	public Document RemoveOID()
+	{
+		Document d = (Document) internalDoc.get("_id");
+		internalDoc.remove("_id");
+		return d;
+	}
+
 	// This needs to be clever as we really need to be able to
-	// Say - assuming nothin was removed - what is already in the DB
+	// Say - assuming nothing was removed - what is already in the DB
 	// Therefore we will have a one-up per thread
 	// A thread starting will find out what it's highest was
 

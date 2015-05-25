@@ -12,7 +12,9 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.InsertOneModel;
-import com.mongodb.client.model.UpdateOneModel;
+import com.mongodb.client.model.UpdateManyModel;
+
+import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.WriteModel;
 
 import static com.mongodb.client.model.Projections.*;
@@ -44,19 +46,25 @@ public class MongoWorker implements Runnable {
 			Boolean split = false;
 			Document cr;
 			while (split == false) {
-
+			
+				try {
 				cr = admindb.runCommand(new Document("split",
 						testOpts.databaseName + "." + testOpts.collectionName)
 						.append("middle",
 								new Document("_id", new Document("w",
 										workerID).append("i", sequence + 1))));
-
-				if (cr.getInteger("ok") == 0) {
-					//System.out.println(cr);
-					try { Thread.sleep(1000); } catch (Exception e){}
-				} else {
-					split = true;
+					split=true;
+				} catch(Exception e){
+					
+					if(e.getMessage().contains("is a boundary key of existing"))
+					{
+						split = true;
+					} else {
+						System.out.println(e.getMessage());
+						try { Thread.sleep(1000); } catch (Exception f) {}
+					}
 				}
+				
 			}
 			// And move that to a shard - which shard? take my workerid and mod
 			// it with the number of shards
@@ -74,21 +82,27 @@ public class MongoWorker implements Runnable {
 		
 			boolean move = false;
 			while (move == false) {
+				cr = null;
+				try
+				{
 				cr = admindb.runCommand(new Document("moveChunk",
 						testOpts.databaseName + "." + testOpts.collectionName)
 						.append("find",
 								new Document("_id", new Document("w",
 										workerID).append("i", sequence + 1)))
 						.append("to", shardName));
-				System.out.println(cr.toJson());
-				if (cr.getInteger("ok") == 0
-						&& cr.getString("errorMessage") .equals(
-								"that chunk is already on that shard") == false) {
-					System.out.println(cr.toJson());
-				} else {
-					move = true;
-					try { Thread.sleep(1000); } catch (Exception e){}
+				} catch(Exception e){
+					
+					if(e.getMessage().contains("that chunk is already on that shard"))
+					{
+						move = true;
+					} else {
+						System.out.println(e.getMessage());
+						try { Thread.sleep(1000); } catch (Exception g){}
+					}
 				}
+				
+			
 			}
 		
 		//System.out.println("Moved {w:" + workerID + ",i:" + (sequence + 1)
@@ -180,8 +194,9 @@ public class MongoWorker implements Runnable {
 
 		Long taken = endtime.getTime() - starttime.getTime();
 
+
 		int icount = bwResult.getInsertedCount();
-		int ucount = bwResult.getModifiedCount();
+		int ucount = bwResult.getMatchedCount();
 
 		// If the bulk op is slow - ALL those ops were slow
 
@@ -194,6 +209,8 @@ public class MongoWorker implements Runnable {
 		
 	}
 
+	
+	
 	private Document simpleKeyQuery() {
 		// Key Query
 		Document query = new Document();
@@ -218,6 +235,46 @@ public class MongoWorker implements Runnable {
 		}
 		return (Document) myDoc;
 	}
+	
+	private Document wholeBucketQuery() {
+		
+		
+		// only valid if we are using buckets
+		if(testOpts.numBuckets == 0)
+		{
+			return new Document();
+		}
+		
+		
+		Document query = new Document();
+		int range = sequence * testOpts.workingset / 100;
+		int rest = sequence - range;
+
+		int recordno = rest
+				+ (int) Math.abs(Math.floor(rng.nextDouble() * range));
+
+		int bucketno = recordno % testOpts.numBuckets;
+		
+		query.append("bucket",bucketno);
+		
+		Date starttime = new Date();
+		//This could be slow
+		List<Document> foundDocument = coll.find().into(new ArrayList<Document>()); //Fetch all
+		
+		
+		if (foundDocument.size() > 0) {
+
+			Date endtime = new Date();
+			Long taken = endtime.getTime() - starttime.getTime();
+			if (taken > testOpts.slowThreshold) {
+				testResults.RecordSlowOp("keyqueries", 1);
+			}
+			testResults.RecordOpsDone("keyqueries", 1);
+		}
+		
+		return new Document();
+	}
+	
 
 	private void rangeQuery() {
 		// Key Query
@@ -262,7 +319,7 @@ public class MongoWorker implements Runnable {
 		Document change = new Document("$inc", fields);
 
 
-		bulkWriter.add(new UpdateOneModel<Document>(query,change));
+		bulkWriter.add(new UpdateManyModel<Document>(query,change));
                 
 		testResults.RecordOpsDone("updates", 1);
 
@@ -295,7 +352,7 @@ public class MongoWorker implements Runnable {
 		Document change = new Document("$set", fields);
 
 		if (testOpts.findandmodify == false) {
-			bulkWriter.add(new UpdateOneModel<Document>(query,change));
+			bulkWriter.add(new UpdateManyModel<Document>(query,change));
 		} else {
 			this.coll.findOneAndUpdate(query, change); //These are immediate not batches
 		}
@@ -311,10 +368,43 @@ public class MongoWorker implements Runnable {
 		tr = new TestRecord(testOpts.numFields, testOpts.textFieldLen,
 				workerID, sequence++, testOpts.NUMBER_SIZE, testOpts.numShards,
 				arr);
+		
+		if(testOpts.numBuckets > 0 && testOpts.bucketSize > 0)
+		{
+			return insertNewRecordInBucket( bulkWriter,  tr);
+		}
 		bulkWriter.add(new InsertOneModel<Document>(tr.internalDoc));
 		return tr;
 	}
 
+	//This one is changing inserts to upserts with push
+	
+	private TestRecord insertNewRecordInBucket(
+			List<WriteModel<Document>> bulkWriter, TestRecord tr) {
+		
+
+		int bucket = sequence % testOpts.numBuckets;
+
+		Document query = new Document();
+		query.append("bucket", bucket);
+		query.append("count", new Document("$lt", testOpts.bucketSize));
+
+		Document fields = new Document("recs", tr.internalDoc);
+		Document change = new Document("$push", fields);
+		Document incCount = new Document("count", 1);
+		
+		change.append("$inc", incCount);
+
+		Document setID = tr.RemoveOID();
+		change.append("$setOnInsert", new Document("_id",setID));
+		
+		UpdateOptions uo = new UpdateOptions();
+		uo.upsert(true);
+		bulkWriter.add(new UpdateManyModel<Document>(query, change, uo));
+		testResults.RecordOpsDone("inserts", 1); //Not ideal putting it here
+		return tr;
+	}
+	
 	@Override
 	public void run() {
 		// Use a bulk inserter - even if ony for one
@@ -334,7 +424,7 @@ public class MongoWorker implements Runnable {
 					// Choose the type of op
 					int allops = testOpts.insertops + testOpts.keyqueries
 							+ testOpts.updates + testOpts.rangequeries
-							+ testOpts.arrayupdates;
+							+ testOpts.arrayupdates + testOpts.bucketFetchOps;
 					int randop = (int) Math.abs(Math.floor(rng.nextDouble()
 							* allops));
 
@@ -344,10 +434,13 @@ public class MongoWorker implements Runnable {
 					} else if (randop < testOpts.insertops
 							+ testOpts.keyqueries) {
 						simpleKeyQuery();
-					} else if (randop < testOpts.insertops
+					}  else if (randop < testOpts.insertops
 							+ testOpts.keyqueries + testOpts.rangequeries) {
 						rangeQuery();
-					} else if (randop < testOpts.insertops
+					} else if (randop < testOpts.bucketFetchOps + testOpts.insertops
+							+ testOpts.keyqueries + testOpts.rangequeries) {
+						wholeBucketQuery();
+					} else if (randop < testOpts.bucketFetchOps + testOpts.insertops
 							+ testOpts.keyqueries + testOpts.rangequeries
 							+ testOpts.arrayupdates) {
 						incrementArrayValue(bulkWriter);
