@@ -35,10 +35,7 @@ public class LoadRunner {
 			coll.drop();
 		}
 		
-		if(testOpts.numBuckets>0)
-		{
-			coll.createIndex(new Document("bucket",1).append("count", 1));
-		}
+
 		
 		for(int x=0;x<testOpts.secondaryidx;x++)
 		{

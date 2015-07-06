@@ -241,13 +241,7 @@ public class MongoWorker implements Runnable {
 	private Document wholeBucketQuery() {
 		
 		
-		// only valid if we are using buckets
-		if(testOpts.numBuckets == 0)
-		{
-			return new Document();
-		}
-		
-		
+	
 		Document query = new Document();
 		int range = sequence * testOpts.workingset / 100;
 		int rest = sequence - range;
@@ -255,10 +249,7 @@ public class MongoWorker implements Runnable {
 		int recordno = rest
 				+ (int) Math.abs(Math.floor(rng.nextDouble() * range));
 
-		int bucketno = recordno % testOpts.numBuckets;
-		
-		query.append("bucket",bucketno);
-		
+	
 		Date starttime = new Date();
 		//This could be slow
 		List<Document> foundDocument = coll.find().into(new ArrayList<Document>()); //Fetch all
@@ -370,42 +361,12 @@ public class MongoWorker implements Runnable {
 		tr = new TestRecord(testOpts.numFields, testOpts.textFieldLen,
 				workerID, sequence++, testOpts.NUMBER_SIZE, testOpts.numShards,
 				arr);
-		
-		if(testOpts.numBuckets > 0 && testOpts.bucketSize > 0)
-		{
-			return insertNewRecordInBucket( bulkWriter,  tr);
-		}
+
 		bulkWriter.add(new InsertOneModel<Document>(tr.internalDoc));
 		return tr;
 	}
 
-	//This one is changing inserts to upserts with push
-	
-	private TestRecord insertNewRecordInBucket(
-			List<WriteModel<Document>> bulkWriter, TestRecord tr) {
-		
 
-		int bucket = sequence % testOpts.numBuckets;
-
-		Document query = new Document();
-		query.append("bucket", bucket);
-		query.append("count", new Document("$lt", testOpts.bucketSize));
-
-		Document fields = new Document("recs", tr.internalDoc);
-		Document change = new Document("$push", fields);
-		Document incCount = new Document("count", 1);
-		
-		change.append("$inc", incCount);
-
-		Document setID = tr.RemoveOID();
-		change.append("$setOnInsert", new Document("_id",setID));
-		
-		UpdateOptions uo = new UpdateOptions();
-		uo.upsert(true);
-		bulkWriter.add(new UpdateManyModel<Document>(query, change, uo));
-		testResults.RecordOpsDone("inserts", 1); //Not ideal putting it here
-		return tr;
-	}
 	
 	@Override
 	public void run() {
@@ -416,17 +377,23 @@ public class MongoWorker implements Runnable {
 			bulkWriter = new ArrayList<WriteModel<Document>>();
 			int bulkops = 0;
 
+			
 			int c = 0;
 			// System.out.println("Child " + this.workerID + " running");
 			while (testResults.GetSecondsElapsed() < testOpts.duration) {
 				c++;
-
+				//Timeer isn't granular enough to sleep for each
+				if(c % 100 == 0 && testOpts.opsPerSecond > 0) {
+					int threads = testOpts.numThreads;
+					int time = 1000000 * threads * 100 / ( testOpts.opsPerSecond);
+					Thread.sleep(time/1000,time % 1000);
+				}
 				if (workflowed == false) {
 					// System.out.println("Random op");
 					// Choose the type of op
 					int allops = testOpts.insertops + testOpts.keyqueries
 							+ testOpts.updates + testOpts.rangequeries
-							+ testOpts.arrayupdates + testOpts.bucketFetchOps;
+							+ testOpts.arrayupdates;
 					int randop = (int) Math.abs(Math.floor(rng.nextDouble()
 							* allops));
 
@@ -439,14 +406,6 @@ public class MongoWorker implements Runnable {
 					}  else if (randop < testOpts.insertops
 							+ testOpts.keyqueries + testOpts.rangequeries) {
 						rangeQuery();
-					} else if (randop < testOpts.bucketFetchOps + testOpts.insertops
-							+ testOpts.keyqueries + testOpts.rangequeries) {
-						wholeBucketQuery();
-					} else if (randop < testOpts.bucketFetchOps + testOpts.insertops
-							+ testOpts.keyqueries + testOpts.rangequeries
-							+ testOpts.arrayupdates) {
-						incrementArrayValue(bulkWriter);
-						bulkops++;
 					} else {
 						// An in place single field update
 						// fld 0 - set to random number
