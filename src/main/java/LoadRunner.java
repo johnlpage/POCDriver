@@ -13,11 +13,14 @@ import org.bson.Document;
 
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
+import com.mongodb.MongoCredential;
+import com.mongodb.ServerAddress;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 
 import static com.mongodb.client.model.Filters.*;
 import com.mongodb.client.model.IndexOptions;
+import java.util.Arrays;
 import java.util.List;
 
 //TODO - Change from System.println to a logging framework?
@@ -150,8 +153,15 @@ public class LoadRunner {
 
 	public LoadRunner(POCTestOptions testOpts) {
 		try {
-			mongoClient = new MongoClient(new MongoClientURI(
-					testOpts.connectionDetails));
+            if (testOpts.username != null) 
+            {
+                MongoCredential credentials = MongoCredential.createCredential(testOpts.username, testOpts.authDatabase, testOpts.password);
+                mongoClient = new MongoClient(new ServerAddress(testOpts.connectionDetails), Arrays.asList(credentials));
+            } else 
+            {
+                mongoClient = new MongoClient(new MongoClientURI(
+                        testOpts.connectionDetails));
+            }
 		} catch (Exception e) {
 		
 			e.printStackTrace();

@@ -1,5 +1,6 @@
 
 
+import java.util.Scanner;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.CommandLineParser;
@@ -37,6 +38,9 @@ public class POCTestOptions {
 	int secondaryidx=0;
 	int arraytop = 0;
 	int arraynext = 0;
+    String username = null;
+    char[] password = null;
+    String authDatabase = null;
 
 
 	boolean findandmodify=false;
@@ -77,6 +81,7 @@ public class POCTestOptions {
 		cliopt.addOption("w","nosharding",false,"Do not shard the collection");
 		cliopt.addOption("x","indexes",true,"Number of secondary indexes - does not remove existing (default 0)");
 		cliopt.addOption("y","fulltext",false,"Create fulltext index (default false)");
+		cliopt.addOption("z","authentication",false,"Use authentication to connect to MongoDB");
 		//y
 		//z
 		
@@ -233,6 +238,18 @@ public class POCTestOptions {
 		if(cmd.hasOption("y"))
         {
             fulltext = true;
+        }
+		if(cmd.hasOption("z"))
+        {
+            System.out.print("Username: ");
+            Scanner scanner = new Scanner(System.in);
+            username = scanner.nextLine();
+            System.out.print("Password: ");
+            String pwd = scanner.nextLine();
+            password = pwd == null ? new char[0] : pwd.toCharArray();
+            System.out.print("Authentication database: ");
+            authDatabase = scanner.nextLine();
+            scanner.close();
         }
 
 		
