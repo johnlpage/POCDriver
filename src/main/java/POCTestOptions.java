@@ -44,6 +44,7 @@ public class POCTestOptions {
 	boolean helpOnly = false;
 	String connectionDetails = "mongodb://localhost:27017";
 	int multistage =0;
+    boolean fulltext;
 	
 	public POCTestOptions(String[] args) throws ParseException
 	{
@@ -75,6 +76,7 @@ public class POCTestOptions {
 		cliopt.addOption("v","workflow",true,"Specify a set of ordered operations per thread from [iukp]");
 		cliopt.addOption("w","nosharding",false,"Do not shard the collection");
 		cliopt.addOption("x","indexes",true,"Number of secondary indexes - does not remove existing (default 0)");
+		cliopt.addOption("y","fulltext",false,"Create fulltext index (default false)");
 		//y
 		//z
 		
@@ -228,6 +230,11 @@ public class POCTestOptions {
 		{
 			numThreads = Integer.parseInt(cmd.getOptionValue("t"));
 		}
+		if(cmd.hasOption("y"))
+        {
+            fulltext = true;
+        }
+
 		
 	}
 }
