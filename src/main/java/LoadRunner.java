@@ -114,7 +114,12 @@ public class LoadRunner {
 		ExecutorService testexec = Executors
 				.newFixedThreadPool(testOpts.numThreads);
 
-		for (int i = 0; i < testOpts.numThreads; i++) {
+		// Allow for multiple clients to run - 
+		// Check for testOpts.threadIdStart - this should be an integer to start
+		// the 'workerID' for each set of threads.
+		int threadIdStart = testOpts.threadIdStart;
+		System.out.println("threadIdStart="+threadIdStart);
+		for (int i = threadIdStart; i < (testOpts.numThreads+threadIdStart); i++) {
 			testexec.execute(new MongoWorker(mongoClient, testOpts, testResults,i));
 		}
 

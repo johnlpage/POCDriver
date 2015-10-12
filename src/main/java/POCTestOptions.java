@@ -14,6 +14,7 @@ public class POCTestOptions {
 	final long NUMBER_SIZE = 1000000;
 	int textFieldLen = 30;
 	int numThreads = 4;
+	int threadIdStart = 0;
 	int reportTime = 10;
 	int slowThreshold = 50;
 	boolean logstats = false;
@@ -71,6 +72,7 @@ public class POCTestOptions {
 		cliopt.addOption("r","rangequeries",true,"Ratio of range query operations (default 0)");
 		cliopt.addOption("s","slowthreshold",true,"Slow operation threshold in ms(default 50)");
 		cliopt.addOption("t","threads",true,"Number of threads (default 4)");
+		cliopt.addOption("y","threadIdStart",true,"Start 'workerId' for each thread. 'w' value in _id. (default 0)");
 		cliopt.addOption("u","updates",true,"Ratio of update operations (default 0)");
 		cliopt.addOption("v","workflow",true,"Specify a set of ordered operations per thread from [iukp]");
 		cliopt.addOption("w","nosharding",false,"Do not shard the collection");
@@ -227,6 +229,11 @@ public class POCTestOptions {
 		if(cmd.hasOption("t"))
 		{
 			numThreads = Integer.parseInt(cmd.getOptionValue("t"));
+		}
+		
+		if(cmd.hasOption("y"))
+		{
+			threadIdStart = Integer.parseInt(cmd.getOptionValue("y"));
 		}
 		
 	}
