@@ -2,6 +2,8 @@
 
 
 
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -11,10 +13,15 @@ import org.bson.Document;
 
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
+import com.mongodb.MongoCredential;
+import com.mongodb.ServerAddress;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 
 import static com.mongodb.client.model.Filters.*;
+import com.mongodb.client.model.IndexOptions;
+import java.util.Arrays;
+import java.util.List;
 
 //TODO - Change from System.println to a logging framework?
 
@@ -41,6 +48,19 @@ public class LoadRunner {
 		{
 			coll.createIndex(new Document("fld"+x,1));
 		}
+        if (testOpts.fulltext) 
+        {
+            IndexOptions options = new IndexOptions();
+            options.background(true);
+            BasicDBObject weights = new BasicDBObject();
+            weights.put("sleutel", 15);
+            weights.put("_fulltext.text", 5);
+            options.weights(weights);
+                //indexOptions.put("weights", weights);
+            Document index = new Document();
+            index.put("$**", "text");
+            coll.createIndex(index, options);
+        }
 		
 		results.initialCount = coll.count();
 		//Now have a look and see if we are sharded
@@ -138,8 +158,15 @@ public class LoadRunner {
 
 	public LoadRunner(POCTestOptions testOpts) {
 		try {
-			mongoClient = new MongoClient(new MongoClientURI(
-					testOpts.connectionDetails));
+            if (testOpts.username != null) 
+            {
+                MongoCredential credentials = MongoCredential.createCredential(testOpts.username, testOpts.authDatabase, testOpts.password);
+                mongoClient = new MongoClient(new ServerAddress(testOpts.connectionDetails), Arrays.asList(credentials));
+            } else 
+            {
+                mongoClient = new MongoClient(new MongoClientURI(
+                        testOpts.connectionDetails));
+            }
 		} catch (Exception e) {
 		
 			e.printStackTrace();

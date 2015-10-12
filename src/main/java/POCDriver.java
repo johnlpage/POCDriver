@@ -18,7 +18,6 @@ public class POCDriver {
 	public static void main(String[] args) {
 		
 		POCTestOptions testOpts;
-		POCTestResults testResults = new POCTestResults();
 		LogManager.getLogManager().reset();
 		System.out.println("MongoDB Proof Of Concept - Load Generator");
 		try {
@@ -90,6 +89,7 @@ public class POCDriver {
 		}
 
 
+		POCTestResults testResults = new POCTestResults();
 		LoadRunner runner = new LoadRunner(testOpts);
 		runner.RunLoad(testOpts,testResults);
 
