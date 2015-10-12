@@ -77,15 +77,13 @@ public class POCTestOptions {
 		cliopt.addOption("r","rangequeries",true,"Ratio of range query operations (default 0)");
 		cliopt.addOption("s","slowthreshold",true,"Slow operation threshold in ms(default 50)");
 		cliopt.addOption("t","threads",true,"Number of threads (default 4)");
-		cliopt.addOption("y","threadIdStart",true,"Start 'workerId' for each thread. 'w' value in _id. (default 0)");
 		cliopt.addOption("u","updates",true,"Ratio of update operations (default 0)");
 		cliopt.addOption("v","workflow",true,"Specify a set of ordered operations per thread from [iukp]");
 		cliopt.addOption("w","nosharding",false,"Do not shard the collection");
 		cliopt.addOption("x","indexes",true,"Number of secondary indexes - does not remove existing (default 0)");
-		cliopt.addOption("y","fulltext",false,"Create fulltext index (default false)");
-		cliopt.addOption("z","authentication",false,"Use authentication to connect to MongoDB");
-		//y
-		//z
+		cliopt.addOption("y","threadIdStart",true,"Start 'workerId' for each thread. 'w' value in _id. (default 0)");
+		cliopt.addOption("z","fulltext",false,"Create fulltext index (default false)");
+		
 		
 		CommandLine cmd = parser.parse(cliopt, args);
 		
@@ -237,23 +235,10 @@ public class POCTestOptions {
 		{
 			numThreads = Integer.parseInt(cmd.getOptionValue("t"));
 		}
-		if(cmd.hasOption("y"))
+		if(cmd.hasOption("z"))
         {
             fulltext = true;
         }
-		if(cmd.hasOption("z"))
-        {
-            System.out.print("Username: ");
-            Scanner scanner = new Scanner(System.in);
-            username = scanner.nextLine();
-            System.out.print("Password: ");
-            String pwd = scanner.nextLine();
-            password = pwd == null ? new char[0] : pwd.toCharArray();
-            System.out.print("Authentication database: ");
-            authDatabase = scanner.nextLine();
-            scanner.close();
-        }
-
 		
 		if(cmd.hasOption("y"))
 		{

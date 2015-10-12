@@ -53,10 +53,9 @@ public class LoadRunner {
             IndexOptions options = new IndexOptions();
             options.background(true);
             BasicDBObject weights = new BasicDBObject();
-            weights.put("sleutel", 15);
+            weights.put("lorem", 15);
             weights.put("_fulltext.text", 5);
             options.weights(weights);
-                //indexOptions.put("weights", weights);
             Document index = new Document();
             index.put("$**", "text");
             coll.createIndex(index, options);
@@ -158,15 +157,8 @@ public class LoadRunner {
 
 	public LoadRunner(POCTestOptions testOpts) {
 		try {
-            if (testOpts.username != null) 
-            {
-                MongoCredential credentials = MongoCredential.createCredential(testOpts.username, testOpts.authDatabase, testOpts.password);
-                mongoClient = new MongoClient(new ServerAddress(testOpts.connectionDetails), Arrays.asList(credentials));
-            } else 
-            {
-                mongoClient = new MongoClient(new MongoClientURI(
-                        testOpts.connectionDetails));
-            }
+			//For not authentication via connection string passing of user/pass only
+                mongoClient = new MongoClient(new MongoClientURI(testOpts.connectionDetails));
 		} catch (Exception e) {
 		
 			e.printStackTrace();
