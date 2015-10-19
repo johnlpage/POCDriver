@@ -1,8 +1,11 @@
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.bson.Document;
 
@@ -13,7 +16,6 @@ import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.InsertOneModel;
 import com.mongodb.client.model.UpdateManyModel;
-
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.WriteModel;
 
@@ -179,14 +181,59 @@ public class MongoWorker implements Runnable {
 			}
 			catch (Exception e)
 			{
+				//We had a problem with this bulk op - some may be completed, some may not
+				
 				//I need to resubmit it here
-				System.out.println("Exception: " + e.getMessage());
+				String error = e.getMessage();
+				
+				
+				//Check if it's a sup key and remove it
+				Pattern p = Pattern.compile("dup key: \\{ : \\{ w: (.*?), i: (.*?) \\}");
+			//	Pattern p = Pattern.compile("dup key");
+				
+				Matcher m = p.matcher(error);
+				if(m.find())
+				{
+					//System.out.println("Duplicate Key");
+					int thread = Integer.parseInt(m.group(1));
+					int uniqid = Integer.parseInt(m.group(2));
+					//System.out.println(" ID = " + thread + " " + uniqid );
+					boolean found=false;
+					for ( Iterator<? super WriteModel<Document>> iter = bulkWriter.listIterator(); iter.hasNext(); ) {
+						//Check if it's a InsertOneModel
+						
+						Object o = iter.next();	
+						if(o instanceof InsertOneModel<?>)
+						{
+							@SuppressWarnings("unchecked")
+							InsertOneModel<Document> a = (InsertOneModel<Document>) o;
+							Document id = (Document) a.getDocument().get("_id");
+						
+							int opthread=id.getInteger("w");
+							int opid = id.getInteger("i");
+							//System.out.println("opthread: " + opthread + "=" + thread + " opid: " + opid + "=" + uniqid);
+						    if ( id.getInteger("i")==uniqid) {
+						    	//System.out.println(" Removing " + thread + " " + uniqid + " from bulkop as already inserted");
+						        iter.remove();
+						        found=true;
+						    }
+						}
+					}
+					if(found == false)
+					{
+						System.out.println("Cannot find failed op in batch!");
+					}
+				} else {
+					System.out.println(error);
+				}
 				if(bwResult != null)
 				{
+					//System.out.println("Resubmitting");
 					System.out.println(bwResult.toString());
+					
 					submitted = false;
 				} else {
-					System.out.println("No result returned");
+					//System.out.println("No result returned");
 					submitted = false;
 				}
 			}
