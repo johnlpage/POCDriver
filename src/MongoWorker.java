@@ -16,7 +16,6 @@ import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.InsertOneModel;
 import com.mongodb.client.model.UpdateManyModel;
-import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.WriteModel;
 
 import static com.mongodb.client.model.Projections.*;
@@ -46,10 +45,11 @@ public class MongoWorker implements Runnable {
 			// So we will tell mongo that's where we want our records to go
 			MongoDatabase admindb = mongoClient.getDatabase("admin");
 			Boolean split = false;
-			Document cr;
+			
 			while (split == false) {
 			
 				try {
+				Document cr;
 				cr = admindb.runCommand(new Document("split",
 						testOpts.databaseName + "." + testOpts.collectionName)
 						.append("middle",
@@ -85,7 +85,7 @@ public class MongoWorker implements Runnable {
 		
 			boolean move = false;
 			while (move == false) {
-				cr = null;
+				Document cr = null;
 				try
 				{
 				cr = admindb.runCommand(new Document("moveChunk",
@@ -94,8 +94,9 @@ public class MongoWorker implements Runnable {
 								new Document("_id", new Document("w",
 										workerID).append("i", sequence + 1)))
 						.append("to", shardName));
+						move=true;
 				} catch(Exception e){
-					
+					System.out.println(e.getMessage());
 					if(e.getMessage().contains("that chunk is already on that shard"))
 					{
 						move = true;
@@ -195,7 +196,7 @@ public class MongoWorker implements Runnable {
 				if(m.find())
 				{
 					//System.out.println("Duplicate Key");
-					int thread = Integer.parseInt(m.group(1));
+					//int thread = Integer.parseInt(m.group(1));
 					int uniqid = Integer.parseInt(m.group(2));
 					//System.out.println(" ID = " + thread + " " + uniqid );
 					boolean found=false;
@@ -209,8 +210,8 @@ public class MongoWorker implements Runnable {
 							InsertOneModel<Document> a = (InsertOneModel<Document>) o;
 							Document id = (Document) a.getDocument().get("_id");
 						
-							int opthread=id.getInteger("w");
-							int opid = id.getInteger("i");
+							//int opthread=id.getInteger("w");
+							//int opid = id.getInteger("i");
 							//System.out.println("opthread: " + opthread + "=" + thread + " opid: " + opid + "=" + uniqid);
 						    if ( id.getInteger("i")==uniqid) {
 						    	//System.out.println(" Removing " + thread + " " + uniqid + " from bulkop as already inserted");
@@ -285,36 +286,7 @@ public class MongoWorker implements Runnable {
 		return (Document) myDoc;
 	}
 	
-	private Document wholeBucketQuery() {
-		
-		
-	
-		Document query = new Document();
-		int range = sequence * testOpts.workingset / 100;
-		int rest = sequence - range;
 
-		int recordno = rest
-				+ (int) Math.abs(Math.floor(rng.nextDouble() * range));
-
-	
-		Date starttime = new Date();
-		//This could be slow
-		List<Document> foundDocument = coll.find().into(new ArrayList<Document>()); //Fetch all
-		
-		
-		if (foundDocument.size() > 0) {
-
-			Date endtime = new Date();
-			Long taken = endtime.getTime() - starttime.getTime();
-			if (taken > testOpts.slowThreshold) {
-				testResults.RecordSlowOp("keyqueries", 1);
-			}
-			testResults.RecordOpsDone("keyqueries", 1);
-		}
-		
-		return new Document();
-	}
-	
 
 	private void rangeQuery() {
 		// Key Query
@@ -339,31 +311,7 @@ public class MongoWorker implements Runnable {
 
 	}
 
-	private void incrementArrayValue(List<? super WriteModel<Document>> bulkWriter) {
-		// Key Query
-		Document query = new Document();
-		int recordno = (int) Math.abs(Math.floor(rng.nextDouble() * sequence));
-
-		query.append("_id",
-				new Document("w", workerID).append("i", recordno));
-
-		int outerIndex;
-		int innerIndex;
-		outerIndex = (int) Math.abs(Math.floor(rng.nextDouble()
-				* testOpts.arraytop));
-		innerIndex = (int) Math.abs(Math.floor(rng.nextDouble()
-				* testOpts.arraynext));
-
-		Document fields = new Document("arr." + outerIndex + "."
-				+ innerIndex, 1);
-		Document change = new Document("$inc", fields);
-
-
-		bulkWriter.add(new UpdateManyModel<Document>(query,change));
-                
-		testResults.RecordOpsDone("updates", 1);
-
-	}
+	
 
 	private void updateSingleRecord(List<WriteModel<Document>>  bulkWriter) {
 		updateSingleRecord(bulkWriter, null);
@@ -407,7 +355,7 @@ public class MongoWorker implements Runnable {
 		arr[1] = testOpts.arraynext;
 		tr = new TestRecord(testOpts.numFields, testOpts.textFieldLen,
 				workerID, sequence++, testOpts.NUMBER_SIZE, testOpts.numShards,
-				arr);
+				arr,testOpts.blobSize);
 
 		bulkWriter.add(new InsertOneModel<Document>(tr.internalDoc));
 		return tr;
@@ -415,7 +363,6 @@ public class MongoWorker implements Runnable {
 
 
 	
-	@Override
 	public void run() {
 		// Use a bulk inserter - even if ony for one
 		List<WriteModel<Document>>  bulkWriter;

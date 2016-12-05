@@ -38,7 +38,7 @@ public class POCDriver {
 				arr[0] = testOpts.arraytop;
 				arr[1] = testOpts.arraynext;
 				tr = new TestRecord(testOpts.numFields, testOpts.textFieldLen,
-						1, 12345678,testOpts.NUMBER_SIZE,testOpts.numShards,arr);
+						1, 12345678,testOpts.NUMBER_SIZE,testOpts.numShards,arr,testOpts.blobSize);
 				//System.out.println(tr);
 				Gson gson = new GsonBuilder().setPrettyPrinting().create();
 				JsonParser jp = new JsonParser();

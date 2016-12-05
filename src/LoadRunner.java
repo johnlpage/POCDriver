@@ -2,8 +2,9 @@
 
 
 
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
+
+import static com.mongodb.client.model.Filters.eq;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -11,17 +12,12 @@ import java.util.concurrent.TimeUnit;
 
 import org.bson.Document;
 
+import com.mongodb.BasicDBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
-import com.mongodb.MongoCredential;
-import com.mongodb.ServerAddress;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-
-import static com.mongodb.client.model.Filters.*;
 import com.mongodb.client.model.IndexOptions;
-import java.util.Arrays;
-import java.util.List;
 
 //TODO - Change from System.println to a logging framework?
 
@@ -43,7 +39,6 @@ public class LoadRunner {
 		}
 		
 
-		
 		for(int x=0;x<testOpts.secondaryidx;x++)
 		{
 			coll.createIndex(new Document("fld"+x,1));

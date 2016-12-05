@@ -3,13 +3,17 @@
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Random;
+
+import org.bson.BsonBinarySubType;
 import org.bson.Document;
+import org.bson.types.Binary;
+
 import de.svenjacobs.loremipsum.LoremIpsum;
 
 
 
 //A Test Record is a MongoDB Record Object that is self populating
-@SuppressWarnings("serial")
+
 public class TestRecord {
 
 	Document internalDoc;
@@ -19,6 +23,8 @@ public class TestRecord {
 	static ArrayList<ArrayList<Integer>> ar;
 	static String loremText = null;
 	
+	static Binary blobData = null;
+		
 	private String CreateString(int length, int fieldNo) {
 		
 		if( loremText == null )
@@ -28,6 +34,8 @@ public class TestRecord {
 			//System.out.println("Generating sample data");
 			loremText = loremIpsum.getWords( 1000 ); 
 		}
+		
+	
 		//System.out.println("Done");
 		
 		StringBuilder sb = new StringBuilder();
@@ -107,10 +115,13 @@ public class TestRecord {
 	}
 
 	public TestRecord(int nFields, int fieldSize, int workerID, int sequence,
-			long numberSize, int numShards, int[] array) {
+			long numberSize, int numShards, int[] array,int binsize) {
 		internalDoc = new Document();
 		rng = new Random();
 		int fieldNo;
+		
+		
+		
 		// Always a field 0
 		AddOID(workerID, sequence);
 		for (fieldNo = 0; (fieldNo < nFields || fieldNo == 0); fieldNo++) {
@@ -154,6 +165,13 @@ public class TestRecord {
 			}
 			internalDoc.append("arr", ar);
 		}
+		if( blobData == null ) {
+			byte[] data = new byte[binsize*1024];
+			rng.nextBytes(data);
+			blobData = new Binary(BsonBinarySubType.BINARY,data);
+		}
+		
+		internalDoc.append("bin", blobData);
 	}
 
 }

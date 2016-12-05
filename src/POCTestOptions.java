@@ -1,13 +1,18 @@
 
 
-import java.util.Scanner;
+
+
+
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.GnuParser;
+
 import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
+
+//Yes - lots of public values, getters are OTT here.
 
 public class POCTestOptions {
 	int batchSize = 512;
@@ -42,7 +47,7 @@ public class POCTestOptions {
     String username = null;
     char[] password = null;
     String authDatabase = null;
-
+    int blobSize = 0;
 
 	boolean findandmodify=false;
 	int workingset = 100;
@@ -53,7 +58,7 @@ public class POCTestOptions {
 	
 	public POCTestOptions(String[] args) throws ParseException
 	{
-		CommandLineParser parser = new GnuParser();
+		CommandLineParser parser = new DefaultParser();
 		
 		Options cliopt;
 		cliopt = new Options();
@@ -81,14 +86,18 @@ public class POCTestOptions {
 		cliopt.addOption("v","workflow",true,"Specify a set of ordered operations per thread from [iukp]");
 		cliopt.addOption("w","nosharding",false,"Do not shard the collection");
 		cliopt.addOption("x","indexes",true,"Number of secondary indexes - does not remove existing (default 0)");
-		cliopt.addOption("y","threadIdStart",true,"Start 'workerId' for each thread. 'w' value in _id. (default 0)");
-		cliopt.addOption("z","fulltext",false,"Create fulltext index (default false)");
-		
+		cliopt.addOption(null,"threadIdStart",true,"Start 'workerId' for each thread. 'w' value in _id. (default 0)");
+		cliopt.addOption(null,"fulltext",false,"Create fulltext index (default false)");
+		cliopt.addOption(null,"binary",true,"add a binary blob of size KB");
 		
 		CommandLine cmd = parser.parse(cliopt, args);
 		
 
-
+		if(cmd.hasOption("binary"))
+		{
+			blobSize = Integer.parseInt(cmd.getOptionValue("binary"));
+		}
+		
 		if(cmd.hasOption("q"))
 		{
 			opsPerSecond = Integer.parseInt(cmd.getOptionValue("q"));
@@ -235,14 +244,14 @@ public class POCTestOptions {
 		{
 			numThreads = Integer.parseInt(cmd.getOptionValue("t"));
 		}
-		if(cmd.hasOption("z"))
+		if(cmd.hasOption("fulltext"))
         {
             fulltext = true;
         }
 		
-		if(cmd.hasOption("y"))
+		if(cmd.hasOption("threadIdStart"))
 		{
-			threadIdStart = Integer.parseInt(cmd.getOptionValue("y"));
+			threadIdStart = Integer.parseInt(cmd.getOptionValue("threadIdStart"));
 		}
 		
 	}
