@@ -155,10 +155,10 @@ After 30 seconds, 69511 new records inserted - collection has 139228 in total
 Requirements to Build
 ---------------------
 
-  * commons-cli-1.2.jar
+  * commons-cli-1.3.jar
   * commons-codec-1.10.jar
   * gson-2.2.4.jar
   * loremipsum-1.0.jar (http://sourceforge.net/projects/loremipsum/files/)
-  * mongo-java-driver-2.13.0.jar
+  * mongo-java-driver-3.4.0.jar
 
 
