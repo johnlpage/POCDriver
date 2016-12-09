@@ -1,5 +1,5 @@
 ***NOTE***
-Recently upgraded to MongoDB 3.4.0 Driver and still undergoing testing and refactoring so less stable than it was right now.
+Recently upgraded to MongoDB 3.4.0 Driver.
 
 Introduction
 ------------
@@ -10,7 +10,7 @@ This tool is to make it easy to answer many of the questions people have during 
 * How fast will it be on my hardware.
 * How could it handle my workload.
 * How does MongoDB scale.
-* How does the High Availability Work ( *NB POCDriver does NOT YET have this part*)
+* How does the High Availability Work / how do I handle a failover.
 
 POCDriver a single JAR file which allows you to specify and run a number of different workloads easily from the command line. It is intended to show how MongoDB should be used for various tasks and avoid's testing your own client code versus MongoDB's capailities. POCDriver is an alternative to using generic tools like YCSB. Unlike these tools POCDriver:
   * Only works with MongoDB - showing what MongoDB can do rather than comparing lowest common denominator between systems that aren't directly comaprable.
