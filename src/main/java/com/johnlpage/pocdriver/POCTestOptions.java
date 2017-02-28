@@ -1,9 +1,6 @@
 package com.johnlpage.pocdriver;
 
 
-
-
-
 import org.apache.commons.cli.CommandLine;
 
 import org.apache.commons.cli.CommandLineParser;

@@ -119,6 +119,9 @@ public class MongoWorker implements Runnable {
 
 	public MongoWorker(MongoClient c, POCTestOptions t, POCTestResults r, int id) {
 		mongoClient = c;
+		
+		//Ping
+		c.getDatabase("admin").runCommand(new Document("ping",1));
 		testOpts = t;
 		testResults = r;
 		workerID = id;
@@ -374,14 +377,23 @@ public class MongoWorker implements Runnable {
 
 			
 			int c = 0;
-			// System.out.println("Child " + this.workerID + " running");
+			
 			while (testResults.GetSecondsElapsed() < testOpts.duration) {
 				c++;
-				//Timeer isn't granular enough to sleep for each
-				if(c % 100 == 0 && testOpts.opsPerSecond > 0) {
-					int threads = testOpts.numThreads;
-					int time = 1000000 * threads * 100 / ( testOpts.opsPerSecond);
-					Thread.sleep(time/1000,time % 1000);
+				//Timer isn't granullar enough to sleep for each
+				if(  testOpts.opsPerSecond > 0) {
+					double threads = testOpts.numThreads;
+					double opsperthreadsecond = testOpts.opsPerSecond / threads;
+					double sleeptimems = 1000 / opsperthreadsecond;
+					
+					if(c==1){
+						//First time randomise
+			
+						Random r = new Random();
+						sleeptimems = r.nextInt((int)Math.floor(sleeptimems));
+					
+					}
+					Thread.sleep((int)Math.floor(sleeptimems));
 				}
 				if (workflowed == false) {
 					// System.out.println("Random op");
