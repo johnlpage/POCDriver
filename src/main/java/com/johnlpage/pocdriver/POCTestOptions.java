@@ -42,6 +42,7 @@ public class POCTestOptions {
 	int secondaryidx=0;
 	int arraytop = 0;
 	int arraynext = 0;
+	int numcollections = 1;
     String username = null;
     char[] password = null;
     String authDatabase = null;
@@ -84,6 +85,7 @@ public class POCTestOptions {
 		cliopt.addOption("v","workflow",true,"Specify a set of ordered operations per thread from [iukp]");
 		cliopt.addOption("w","nosharding",false,"Do not shard the collection");
 		cliopt.addOption("x","indexes",true,"Number of secondary indexes - does not remove existing (default 0)");
+		cliopt.addOption("z","collections",true,"Number of collections to span the workload over (default 1)");
 		cliopt.addOption(null,"threadIdStart",true,"Start 'workerId' for each thread. 'w' value in _id. (default 0)");
 		cliopt.addOption(null,"fulltext",false,"Create fulltext index (default false)");
 		cliopt.addOption(null,"binary",true,"add a binary blob of size KB");
@@ -182,6 +184,10 @@ public class POCTestOptions {
 		if(cmd.hasOption("x"))
 		{
 			secondaryidx = Integer.parseInt(cmd.getOptionValue("x"));
+		}
+		if(cmd.hasOption("z"))
+		{
+			numcollections = Integer.parseInt(cmd.getOptionValue("z"));
 		}
 		
 		if(cmd.hasOption("o"))
