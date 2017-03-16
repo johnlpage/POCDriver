@@ -27,6 +27,7 @@ public class MongoWorker implements Runnable {
 	MongoClient mongoClient;
 	MongoDatabase db;
 	MongoCollection<Document>  coll;
+	ArrayList<MongoCollection<Document>> colls;
 	POCTestOptions testOpts;
 	POCTestResults testResults;
 	int workerID;
@@ -132,8 +133,14 @@ public class MongoWorker implements Runnable {
 		maxCollections = testOpts.numcollections;
 		baseCollectionName = testOpts.collectionName;
 		if (maxCollections > 1) {
+			colls = new ArrayList<MongoCollection<Document>>();
 			lastCollection = 0;
-			coll = db.getCollection(baseCollectionName + "0");		
+			for (int i = 0; i < maxCollections; i++) {
+				StringBuilder str = new StringBuilder(0);
+				str.append(baseCollectionName);
+				str.append(i);
+				colls.add(db.getCollection(str.toString()));
+			}
 		} else {
 			coll = db.getCollection(baseCollectionName);
 		}
@@ -332,11 +339,8 @@ public class MongoWorker implements Runnable {
 
 	private void rotateCollection() {
 		if (maxCollections > 1) {
-			StringBuilder str = new StringBuilder(0);
-			str.append(baseCollectionName);
-			str.append(lastCollection);
+			coll = colls.get(lastCollection);
 			lastCollection = (lastCollection + 1) % maxCollections;
-			coll = db.getCollection(str.toString());	
 		}
 	}	
 
