@@ -8,6 +8,8 @@ import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.math3.distribution.ZipfDistribution;
+
 import org.bson.Document;
 
 import com.mongodb.MongoClient;
@@ -34,7 +36,9 @@ public class MongoWorker implements Runnable {
 	int sequence;
 	int numShards = 0;
 	Random rng;
+	ZipfDistribution zipf;
 	boolean workflowed = false;
+	boolean zipfian = false;
 	String workflow;
 	int workflowStep = 0;
 	ArrayList<Document> keyStack;
@@ -150,6 +154,10 @@ public class MongoWorker implements Runnable {
 
 		ReviewShards();
 		rng = new Random();
+		if (testOpts.zipfian) {
+			zipfian = true;
+			zipf = new ZipfDistribution(testOpts.zipfsize, 0.99);
+		}
 
 		if (testOpts.workflow != null) {
 			workflow = testOpts.workflow;
@@ -157,6 +165,16 @@ public class MongoWorker implements Runnable {
 			keyStack = new ArrayList<Document>();
 		}
 
+	}
+
+	private int getNextVal(int mult) {
+		int rval = 0;
+		if (zipfian) {
+			rval = zipf.sample();
+		} else {
+			rval = (int) Math.abs(Math.floor(rng.nextDouble() * mult));
+		}
+		return rval;
 	}
 
 	private int getHighestID() {
@@ -292,8 +310,7 @@ public class MongoWorker implements Runnable {
 		int range = sequence * testOpts.workingset / 100;
 		int rest = sequence - range;
 
-		int recordno = rest
-				+ (int) Math.abs(Math.floor(rng.nextDouble() * range));
+		int recordno = rest + getNextVal(range);
 
 		query.append("_id",
 				new Document("w", workerID).append("i", recordno));
@@ -317,7 +334,7 @@ public class MongoWorker implements Runnable {
 		// Key Query
 		rotateCollection();
 		Document query = new Document();
-		int recordno = (int) Math.abs(Math.floor(rng.nextDouble() * sequence));
+		int recordno =  getNextVal(sequence);
 		query.append("_id", new Document("$gt", new Document("w",
 				workerID).append("i", recordno)));
 		Date starttime = new Date();
@@ -353,15 +370,13 @@ public class MongoWorker implements Runnable {
 		// Key Query
 		rotateCollection();
 		Document query = new Document();
-		long changedfield = (long) Math.abs(Math.floor(rng.nextDouble()
-				* testOpts.NUMBER_SIZE));
+		long changedfield = (long) getNextVal((int) testOpts.NUMBER_SIZE);
 
 		if (key == null) {
 			int range = sequence * testOpts.workingset / 100;
 			int rest = sequence - range;
 
-			int recordno = rest
-					+ (int) Math.abs(Math.floor(rng.nextDouble() * range));
+			int recordno = rest + getNextVal(range);
 
 			query.append("_id",
 					new Document("w", workerID).append("i", recordno));
@@ -429,8 +444,7 @@ public class MongoWorker implements Runnable {
 					int allops = testOpts.insertops + testOpts.keyqueries
 							+ testOpts.updates + testOpts.rangequeries
 							+ testOpts.arrayupdates;
-					int randop = (int) Math.abs(Math.floor(rng.nextDouble()
-							* allops));
+					int randop = getNextVal(allops);
 
 					if (randop < testOpts.insertops) {
 						insertNewRecord(bulkWriter);
