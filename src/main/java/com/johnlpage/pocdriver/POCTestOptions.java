@@ -42,6 +42,12 @@ public class POCTestOptions {
 	int secondaryidx=0;
 	int arraytop = 0;
 	int arraynext = 0;
+	int numcollections = 1;
+
+	//Zipfian stuff
+	boolean zipfian = false;
+	int zipfsize = 0;
+
     String username = null;
     char[] password = null;
     String authDatabase = null;
@@ -84,6 +90,8 @@ public class POCTestOptions {
 		cliopt.addOption("v","workflow",true,"Specify a set of ordered operations per thread from [iukp]");
 		cliopt.addOption("w","nosharding",false,"Do not shard the collection");
 		cliopt.addOption("x","indexes",true,"Number of secondary indexes - does not remove existing (default 0)");
+		cliopt.addOption("y","collections",true,"Number of collections to span the workload over, implies w (default 1)");
+		cliopt.addOption("z","zipfian",true,"Enable zipfian distribution over X number of documents (default 0)");
 		cliopt.addOption(null,"threadIdStart",true,"Start 'workerId' for each thread. 'w' value in _id. (default 0)");
 		cliopt.addOption(null,"fulltext",false,"Create fulltext index (default false)");
 		cliopt.addOption(null,"binary",true,"add a binary blob of size KB");
@@ -183,6 +191,16 @@ public class POCTestOptions {
 		{
 			secondaryidx = Integer.parseInt(cmd.getOptionValue("x"));
 		}
+		if(cmd.hasOption("y"))
+		{
+			numcollections = Integer.parseInt(cmd.getOptionValue("y"));
+			singleserver=true;
+		}
+		if(cmd.hasOption("z"))
+                {
+			zipfian = true;
+                        zipfsize = Integer.parseInt(cmd.getOptionValue("z"));
+                }
 		
 		if(cmd.hasOption("o"))
 		{
