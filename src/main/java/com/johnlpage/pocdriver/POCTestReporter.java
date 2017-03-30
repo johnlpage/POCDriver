@@ -31,6 +31,7 @@ public class POCTestReporter implements Runnable {
 	private void logData()
 	{
 		PrintWriter outfile = null;
+		StringBuilder outtext = new StringBuilder();
 		
 		if(testOpts.logfile != null)
 		{
@@ -46,30 +47,29 @@ public class POCTestReporter implements Runnable {
 		Long insertsDone = testResults.GetOpsDone("inserts");
 		if (testResults.GetSecondsElapsed() < testOpts.reportTime)
 			return;
-		System.out.println("------------------------");
-		if (testOpts.sharded && !testOpts.singleserver) {
+		outtext.append(String.format("------%d------\n", System.currentTimeMillis()));
+		if (testOpts.sharded && !testOpts.singleserver)
+		{
 			MongoDatabase configdb = mongoClient.getDatabase("config");
 			MongoCollection<Document>  shards = configdb.getCollection("shards");
 			int numShards = (int)shards.count();
 			testOpts.numShards = numShards;
-			}
-		System.out.format("After %d seconds, %d new records inserted - collection has %d in total \n",
-				testResults.GetSecondsElapsed(), insertsDone, testResults.initialCount + insertsDone);
+		}
+		outtext.append(String.format("After %d seconds, %d new records inserted - collection has %d in total \n",
+				testResults.GetSecondsElapsed(), insertsDone, testResults.initialCount + insertsDone));
 		
 		if(outfile != null)
 		{
-			outfile.format("%d,%d", testResults.GetSecondsElapsed(), insertsDone);
+			outfile.format("%d,%d,%d", System.currentTimeMillis() ,testResults.GetSecondsElapsed(), insertsDone);
 		}
 		
 		
-		HashMap<String, Long> results = testResults
-				.GetOpsPerSecondLastInterval();
+		HashMap<String, Long> results = testResults.GetOpsPerSecondLastInterval();
 		String[] opTypes = POCTestResults.opTypes;
 
 		for (String o: opTypes)
 		{
-			System.out.format("%d %s per second since last report ",
-					results.get(o), o);
+			outtext.append(String.format("%d %s per second since last report ", results.get(o), o));
 			
 			if(outfile != null)
 			{
@@ -81,27 +81,30 @@ public class POCTestReporter implements Runnable {
 			if (opsDone > 0) {
 				Double fastops = 100 - (testResults.GetSlowOps(o) * 100.0)
 						/ opsDone;
-				System.out.format("%.2f %% in under %d milliseconds", fastops,
-						testOpts.slowThreshold);
+				outtext.append(String.format("%.2f %% in under %d milliseconds", fastops,
+						testOpts.slowThreshold));
 				if(outfile != null)
 				{
 					outfile.format(",%.2f", fastops);
 				}
 			} else {
-				System.out.format("%.2f %% in under %d milliseconds",(float)100,testOpts.slowThreshold);
+				outtext.append(String.format("%.2f %% in under %d milliseconds",(float)100,testOpts.slowThreshold));
 				if(outfile != null)
-				{ outfile.format(",%d", 100);}
+				{
+					outfile.format(",%d", 100);
+				}
 			}
-			System.out.println();
+			outtext.append("\n");
 		
 		}
 		if(outfile != null)
-		{ outfile.println();
-		outfile.close();
+		{
+			outfile.println();
+			outfile.close();
 		}
-		System.out.println();
+		System.out.println(outtext);
 	}
-	
+
 	public void run() {
 
 		logData();
