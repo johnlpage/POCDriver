@@ -24,9 +24,25 @@ public class POCTestReporter implements Runnable {
 		mongoClient = mc;
 		testResults = r;
 		testOpts = t;
-
+		printHeader();
 	}
 
+	private void printHeader()
+	{
+		PrintWriter outfile = null;
+		String[] opTypes = POCTestResults.opTypes;
+		try {
+			outfile = new PrintWriter(new BufferedWriter(new FileWriter(testOpts.logfile, true)));
+		} catch (IOException e) {
+			System.out.println(e.getMessage());
+		}
+		outfile.print("system_clock,relative_clock,total_inserts");
+		for (String o: opTypes) {
+			outfile.format(",%s,percent_%s_fastop",o,o);
+		}
+		outfile.println();
+		outfile.close();
+	}
 
 	private void logData()
 	{
@@ -73,7 +89,7 @@ public class POCTestReporter implements Runnable {
 			
 			if(outfile != null)
 			{
-				outfile.format(",%s,%d", o,results.get(o));
+				outfile.format(",%d",results.get(o));
 			}
 			
 			
