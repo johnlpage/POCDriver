@@ -44,7 +44,11 @@ public class MongoWorker implements Runnable {
 	ArrayList<Document> keyStack;
 	int lastCollection;
 	int maxCollections;
+	int curCollections;
 	String baseCollectionName;
+	int incrementRate = 0;
+	int incrementIntvl = 0;
+	Date lastIncTime = new Date();
 
 	public void ReviewShards() {
 		//System.out.println("Reviewing chunk distribution");
@@ -140,7 +144,11 @@ public class MongoWorker implements Runnable {
 		workerID = id;
 		db = mongoClient.getDatabase(testOpts.databaseName);
 		maxCollections = testOpts.numcollections;
+		curCollections = t.incrementRate;
 		baseCollectionName = testOpts.collectionName;
+		incrementRate = t.incrementRate;
+		incrementIntvl = t.incrementIntvl;
+
 		if (maxCollections > 1) {
 			colls = new ArrayList<MongoCollection<Document>>();
 			lastCollection = 0;
@@ -361,8 +369,20 @@ public class MongoWorker implements Runnable {
 
 	private void rotateCollection() {
 		if (maxCollections > 1) {
+			if(incrementIntvl > 0 && curCollections < maxCollections) {
+				Date now = new Date();
+				int secondsSinceLastCheck = (int)(now.getTime() - lastIncTime.getTime()) / 1000;
+				if (secondsSinceLastCheck >= incrementIntvl) {
+					curCollections += incrementRate;
+					if (curCollections > maxCollections) {
+						curCollections = maxCollections;
+					}
+					System.out.println(String.format("its been %d seconds, maxcoll is now %d", secondsSinceLastCheck, curCollections));
+					lastIncTime = now;
+				}
+			}
 			coll = colls.get(lastCollection);
-			lastCollection = (lastCollection + 1) % maxCollections;
+			lastCollection = (lastCollection + 1) % curCollections;
 		}
 	}	
 
