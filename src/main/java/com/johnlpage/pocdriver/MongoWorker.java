@@ -145,6 +145,7 @@ public class MongoWorker implements Runnable {
 		db = mongoClient.getDatabase(testOpts.databaseName);
 		maxCollections = testOpts.numcollections;
 		curCollections = t.incrementRate;
+		testResults.SetCollectionsNum(curCollections);
 		baseCollectionName = testOpts.collectionName;
 		incrementRate = t.incrementRate;
 		incrementIntvl = t.incrementIntvl;
@@ -377,8 +378,9 @@ public class MongoWorker implements Runnable {
 					if (curCollections > maxCollections) {
 						curCollections = maxCollections;
 					}
-					System.out.println(String.format("its been %d seconds, maxcoll is now %d", secondsSinceLastCheck, curCollections));
+					//System.out.println(String.format("its been %d seconds, maxcoll is now %d", secondsSinceLastCheck, curCollections));
 					lastIncTime = now;
+					testResults.SetCollectionsNum(curCollections);
 				}
 			}
 			coll = colls.get(lastCollection);

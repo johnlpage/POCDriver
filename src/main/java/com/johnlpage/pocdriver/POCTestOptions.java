@@ -283,7 +283,7 @@ public class POCTestOptions {
 			incrementIntvl = Integer.parseInt(cmd.getOptionValue("incrementIntvl"));
 			float floatRate = numcollections / incrementPeriod * incrementIntvl;
 			incrementRate = Math.round(floatRate); 
-			System.out.println(String.format("Trying to ramp to %d collections over %d secions, adding %d collections every %d seconds", numcollections, incrementPeriod, incrementRate, incrementIntvl));
+			System.out.println(String.format("Trying to ramp to %d collections over %d seconds, adding %d collections every %d seconds", numcollections, incrementPeriod, incrementRate, incrementIntvl));
 		}
 	}
 }

@@ -9,6 +9,7 @@ public class POCTestResults {
 	Date	startTime;
 	Date	lastIntervalTime;
 	long	initialCount;
+	int	currentCollections = 1;
 
 	public static String[] opTypes = { "inserts", "keyqueries","updates","rangequeries"};
 	private ConcurrentHashMap<String,POCopStats> opStats;
@@ -104,7 +105,15 @@ public class POCTestResults {
 		os.totalOpsDone.addAndGet(howmany);
 		}
 	}
-	
 
+	public void SetCollectionsNum(int num)
+	{
+		currentCollections = num;
+	}
+
+	public int GetCollectionsNum()
+	{
+		return currentCollections;
+	}
 	
 }
