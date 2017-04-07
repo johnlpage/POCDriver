@@ -47,7 +47,7 @@ Client options
 -t how many threads to run on the client and thus how many connections.
 -s what threshold to consider slow when repoting latency percentages in ms
 -o output stats to a file rather then the screen
--n use a namespace 'schema.collection' of your choiuce
+-n use a namespace 'schema.collection' of your choice
 -d how long to run the loader for.
 -q *try* to limit rate to specified ops per second.
 -c a mongodb connection string, you can include write concerns and thread pool size info in this
