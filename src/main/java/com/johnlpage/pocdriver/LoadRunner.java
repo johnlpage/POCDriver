@@ -77,7 +77,8 @@ public class LoadRunner {
 			return;
 		}
 
-		if (cr.get("process").equals("mongos"))
+		String procname = (String)cr.get("process");
+		if (procname != null && procname.contains("mongos"))
 		{
 			testOpts.sharded = true;
 			//Turn the auto balancer off - good code rarely needs it running constantly 
