@@ -47,11 +47,13 @@ public class MongoWorker implements Runnable {
 	String baseCollectionName;
 
 	public void ReviewShards() {
+		//System.out.println("Reviewing chunk distribution");
 		if (testOpts.sharded && !testOpts.singleserver) {
 			// I'd like to pick a shard and write there - it's going to be
 			// faster and
 			// We can ensure we distribute our workers over out shards
 			// So we will tell mongo that's where we want our records to go
+			//System.out.println("Sharded and not a single server");
 			MongoDatabase admindb = mongoClient.getDatabase("admin");
 			Boolean split = false;
 			
@@ -59,6 +61,7 @@ public class MongoWorker implements Runnable {
 			
 				try {
 				Document cr;
+		//		System.out.println("Splitting a chunk");
 				cr = admindb.runCommand(new Document("split",
 						testOpts.databaseName + "." + testOpts.collectionName)
 						.append("middle",
@@ -85,11 +88,13 @@ public class MongoWorker implements Runnable {
 
 			MongoCursor<Document> shardlist = mongoClient.getDatabase("config")
 					.getCollection("shards").find().skip(shardno).limit(1).iterator();
+			//System.out.println("Getting shard name");
 			String shardName = new String("");
 			while (shardlist.hasNext()) {
 				Document obj = shardlist.next();
+				
 				shardName = obj.getString("_id");
-
+				//System.out.println(shardName);
 			}
 		
 			boolean move = false;

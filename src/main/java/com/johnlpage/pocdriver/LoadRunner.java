@@ -17,6 +17,7 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.IndexOptions;
 
@@ -90,6 +91,7 @@ public class LoadRunner {
 				//System.out.println("Balancer disabled");
 			}
 			try {
+				//System.out.println("Enabling Sharding on Database");
 				cr = admindb.runCommand(new Document("enableSharding",testOpts.databaseName));
 			} catch (Exception e)
 			{
@@ -100,6 +102,7 @@ public class LoadRunner {
 
 			
 			try{
+				//System.out.println("Sharding Collection");
 			cr = admindb.runCommand(new Document("shardCollection",
 					testOpts.databaseName+"."+testOpts.collectionName).append("key", new Document("_id",1)));
 			} catch (Exception e)
@@ -110,10 +113,19 @@ public class LoadRunner {
 
 			
 			//See how many shards we have in the system - and get a list of their names
-			
+			//System.out.println("Counting Shards");
 			MongoCollection<Document>  shards = configdb.getCollection("shards");
-			//DBCursor cursor = (DBCursor) shards.find();
-			testOpts.numShards = (int)shards.count();
+			MongoCursor<Document> shardc= shards.find().iterator();
+			testOpts.numShards=0;
+			while(shardc.hasNext()) {
+				//System.out.println("Found a shard");
+				shardc.next();
+				testOpts.numShards++;
+				
+			}
+			
+		
+			//System.out.println("System has "+testOpts.numShards+" shards");
 		}
 	}
 	
