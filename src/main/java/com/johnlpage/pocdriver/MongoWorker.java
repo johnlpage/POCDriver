@@ -425,7 +425,7 @@ public class MongoWorker implements Runnable {
 
 			
 			int c = 0;
-			
+			System.out.println("Worker thread " + workerID + " Started.");
 			while (testResults.GetSecondsElapsed() < testOpts.duration) {
 				c++;
 				//Timer isn't granullar enough to sleep for each

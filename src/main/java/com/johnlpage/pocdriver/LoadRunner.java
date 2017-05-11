@@ -107,7 +107,7 @@ public class LoadRunner {
 					testOpts.databaseName+"."+testOpts.collectionName).append("key", new Document("_id",1)));
 			} catch (Exception e)
 			{
-				if(!e.getMessage().contains("already sharded"))
+				if(!e.getMessage().contains("already"))
 					System.out.println(e.getMessage());
 			}
 
@@ -146,11 +146,11 @@ public class LoadRunner {
 		// Check for testOpts.threadIdStart - this should be an integer to start
 		// the 'workerID' for each set of threads.
 		int threadIdStart = testOpts.threadIdStart;
-		System.out.println("threadIdStart="+threadIdStart);
+		//System.out.println("threadIdStart="+threadIdStart);
 		for (int i = threadIdStart; i < (testOpts.numThreads+threadIdStart); i++) {
 			testexec.execute(new MongoWorker(mongoClient, testOpts, testResults,i));
 		}
-
+	
 		testexec.shutdown();
 	
 		try {
