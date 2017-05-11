@@ -36,22 +36,22 @@ def get_last_ops(client):
     last_ops['writes'] = res['opLatencies']['writes']['ops']
     last_ops['write_latency'] = res['opLatencies']['writes']['latency']
     collections = client[dbname].command('dbstats')['collections']
-    return ("%d,%d,%d,%d,%d" % ((gross - last_gross),collections,writes,write_latency,write_latency/writes))
-
-def build_poc_driver():
-        print "launching mongodb"
+    avg_latency = 0
+    if writes > 0:
+        avg_latency = write_latency/writes
+    return ("%d,%d,%d,%d,%d" % ((gross - last_gross),collections,writes,write_latency,avg_latency))
 
 def launch_poc_driver():
     global java_proc
-    command = ("java -jar bin/POCDriver.jar"
-               "-i " + str(insert_rate)
-               "-u %s" + str(update_rate)
-               "-q %s" + str(query_rate)
-               "-z 10000000"
-               "-y " + str(num_collections)
-               "-o out.csv -t " + str(worker_threads)
-               "--incrementPeriod " + str(time_to_ramp)
-               "--incrementIntvl " + str(ramp_interval))
+    command = ("java -jar bin/POCDriver.jar" \
+               " -i " + str(insert_rate) + 
+               " -u " + str(update_rate) +
+               " -q " + str(query_rate) + 
+               " -z 10000000" 
+               " -y " + str(num_collections) +
+               " -o out.csv -t " + str(worker_threads) +
+               " --incrementPeriod " + str(time_to_ramp) +
+               " --incrementIntvl " + str(ramp_interval)) 
     java_proc = subprocess.Popen(command, shell=True)
 
 # Main
