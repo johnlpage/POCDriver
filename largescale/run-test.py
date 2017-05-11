@@ -59,29 +59,29 @@ def launch_poc_driver():
 def load_from_config(filename):
     global insert_rate, update_rate, query_rate, num_collections, total_runtime, time_to_ramp, ramp_interval, worker_threads, gross_throughput
     with open(filename, "r") as f:
-    for line in f:
-        arr = line.split('=')
-        if arr[0] == "insert"
-            insert_rate = int(arr[1])
-        if arr[0] == "update"
-            update_rate = int(arr[1])
-        if arr[0] == "read"
-            query_rate = int(arr[1])
-        if arr[0] == "collections"
-            num_collections = int(arr[1])
-        if arr[0] == "runtime"
-            total_runtime = int(arr[1])
-        if arr[0] == "ramptime"
-            time_to_ramp = int(arr[1])
-        if arr[0] == "ramp_interval"
-            ramp_interval = int(arr[1])
-        if arr[0] == "thread"
-            worker_threads = int(arr[1])
-        if arr[0] == "throughput"
-            gross_throughput = int(arr[1])
+        for line in f:
+            arr = line.split('=')
+            if arr[0] == "insert":
+                insert_rate = int(arr[1])
+            if arr[0] == "update":
+                update_rate = int(arr[1])
+            if arr[0] == "read":
+                query_rate = int(arr[1])
+            if arr[0] == "collections":
+                num_collections = int(arr[1])
+            if arr[0] == "runtime":
+                total_runtime = int(arr[1])
+            if arr[0] == "ramptime":
+                time_to_ramp = int(arr[1])
+            if arr[0] == "ramp_interval":
+                ramp_interval = int(arr[1])
+            if arr[0] == "thread":
+                worker_threads = int(arr[1])
+            if arr[0] == "throughput":
+                gross_throughput = int(arr[1])
 
 # Main
-if len(sys.argv) > 1
+if len(sys.argv) > 1:
     load_from_config(sys.argv[1])
 
 client = MongoClient('mongodb://localhost:27017/')
