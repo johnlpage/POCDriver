@@ -100,8 +100,8 @@ public class POCTestOptions {
 		cliopt.addOption(null,"threadIdStart",true,"Start 'workerId' for each thread. 'w' value in _id. (default 0)");
 		cliopt.addOption(null,"fulltext",false,"Create fulltext index (default false)");
 		cliopt.addOption(null,"binary",true,"add a binary blob of size KB");
-		cliopt.addOption(null,"incrementPeriod",true,"time perdiod to spend ramping to max collections (default 0)");
-		cliopt.addOption(null,"incrementIntvl",true,"time perdiod to spend ramping to max collections (default 0)");
+		cliopt.addOption(null,"incrementPeriod",true,"time perdiod in seconds to spend ramping to max collections (default 0)");
+		cliopt.addOption(null,"incrementIntvl",true,"time perdiod in seconds to spend between increases to number of collections (default 0)");
 		
 		CommandLine cmd = parser.parse(cliopt, args);
 		
