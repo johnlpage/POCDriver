@@ -1,0 +1,7 @@
+runtime=43200 
+insert=100
+update=0
+read=0
+throughput=10000
+thread=64
+collections=1000000
