@@ -49,6 +49,7 @@ def launch_poc_driver():
                " -u " + str(update_rate) +
                " -q " + str(query_rate) + 
                " -z 10000000" 
+               " -d " + str(total_runtime) +
                " -y " + str(num_collections) +
                " -o out.csv -t " + str(worker_threads) +
                " --incrementPeriod " + str(time_to_ramp) +
