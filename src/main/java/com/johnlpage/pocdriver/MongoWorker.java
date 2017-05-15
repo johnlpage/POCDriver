@@ -43,12 +43,15 @@ public class MongoWorker implements Runnable {
 	int workflowStep = 0;
 	ArrayList<Document> keyStack;
 	int lastCollection;
+	int currCollection;
 	int maxCollections;
 	int curCollections;
 	String baseCollectionName;
 	int incrementRate = 0;
 	int incrementIntvl = 0;
 	Date lastIncTime = new Date();
+	int collectionKeyRange = 0;
+	ArrayList<Integer> collectionHash;
 
 	public void ReviewShards() {
 		//System.out.println("Reviewing chunk distribution");
@@ -149,10 +152,12 @@ public class MongoWorker implements Runnable {
 		baseCollectionName = testOpts.collectionName;
 		incrementRate = t.incrementRate;
 		incrementIntvl = t.incrementIntvl;
+		collectionKeyRange = t.coll_key_range;
 
 		if (maxCollections > 1) {
 			colls = new ArrayList<MongoCollection<Document>>();
 			lastCollection = 0;
+			currCollection = 0;
 			for (int i = 0; i < maxCollections; i++) {
 				StringBuilder str = new StringBuilder(0);
 				str.append(baseCollectionName);
@@ -179,7 +184,19 @@ public class MongoWorker implements Runnable {
 			keyStack = new ArrayList<Document>();
 		}
 
+		if (collectionKeyRange > 0) {
+			collectionHash = new ArrayList<Integer>();
+			for(int i = 0; i < maxCollections; i++) {
+				collectionHash.add(0);
+			}
+		}
+
 	}
+	private int getNextSequenceNum(int mult) {
+		int rval = 0;
+                rval = (int) Math.abs(Math.floor(rng.nextDouble() * mult));
+                return rval;
+        }
 
 	private int getNextVal(int mult) {
 		int rval = 0;
@@ -384,6 +401,7 @@ public class MongoWorker implements Runnable {
 				}
 			}
 			coll = colls.get(lastCollection);
+			currCollection = lastCollection;
 			lastCollection = (lastCollection + 1) % curCollections;
 		}
 	}	
@@ -410,6 +428,15 @@ public class MongoWorker implements Runnable {
 		} else {
 			query.append("_id", key);
 		}
+
+		if (collectionKeyRange > 0) {
+			query.remove("_id");
+			int val = collectionHash.get(currCollection);
+			query.append("_id", val);
+			collectionHash.set(currCollection, ++val);
+			
+		}
+	
 		Document fields = new Document("fld0", changedfield);
 		Document change = new Document("$set", fields);
 
@@ -471,7 +498,7 @@ public class MongoWorker implements Runnable {
 					int allops = testOpts.insertops + testOpts.keyqueries
 							+ testOpts.updates + testOpts.rangequeries
 							+ testOpts.arrayupdates;
-					int randop = getNextVal(allops);
+					int randop = getNextSequenceNum(allops);
 
 					if (randop < testOpts.insertops) {
 						insertNewRecord(bulkWriter);

@@ -88,6 +88,11 @@ public class TestRecord {
 		internalDoc.append("_id", oid);
 	}
 
+	public void AddSeqOID(int seq) {
+		internalDoc.remove("_id");
+		internalDoc.append("_id", seq);
+	}
+
 	// Just so we always know what the type of a given field is
 	// Useful for querying, indexing etc
 

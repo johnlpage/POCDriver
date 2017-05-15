@@ -4,25 +4,34 @@ import sys
 import os
 import time
 import subprocess
+import random
+import datetime
 from pymongo import MongoClient
+from bson.binary import Binary
+from loremipsum import get_sentences
+
 
 
 # Steering
-insert_rate = 100
-update_rate = 0
+insert_rate = 0
+update_rate = 100
 query_rate = 0
 num_collections = 1
 total_runtime = 3600 * 12
 time_to_ramp = total_runtime/2
-ramp_interval = 60
+ramp_interval = 300
 worker_threads = 32
 gross_throughput = 10000
+collection_ramp_size = 500
+working_set_docs = 1000000
+collections_contents = {}
 
 
 runtime = 0
 output_filename = "results.csv"
 last_ops = {"insert": 0, "update": 0, "delete": 0, "query":0, "writes":0, "write_latency":0}
 dbname = "POCDB"
+collname = "POCCOLL"
 java_command = False
 
 def get_last_ops(client):
@@ -40,25 +49,69 @@ def get_last_ops(client):
     avg_latency = 0
     if writes > 0:
         avg_latency = write_latency/writes
-    return ("%d,%d,%d,%d,%d" % ((gross - last_gross),collections,writes,write_latency,avg_latency))
+    return ("%d,%d,%d,%d,%d" % ((gross - last_gross),collections,writes,write_latency,avg_latency)), avg_latency
 
-def launch_poc_driver():
+def random_string(length):
+    return get_sentences(length)[0]
+
+
+def populate_collections(client, collections):
+    docs_per = working_set_docs / collections
+    for x in range(collections):
+        if x not in collections_contents:
+            ns = collname + str(x)
+            collections_contents[x] = docs_per
+            numInBulk = 0
+            bulkSize = 1000
+            bulk = client[dbname][ns].initialize_unordered_bulk_op()
+            str1 = random_string(1)
+            str2 = random_string(1)
+            str3 = random_string(1)
+            str4 = random_string(1)
+            str5 = random_string(1)
+            for y in range(docs_per):
+                if y % bulkSize == 0 and y > 0:
+                    bulk.execute()
+                    bulk = client[dbname][ns].initialize_unordered_bulk_op()
+
+                bulk.insert({ "_id" : y,
+                    "fld0" : random.randint(0,10000000),
+                    "fld1" : random.randint(0,10000000),
+                    "fld2" : str1,
+                    "fld3" : str2,
+                    "fld4" : str3,
+                    "fld5" : datetime.datetime.now(),
+                    "fld6" : random.randint(0,10000000),
+                    "fld7" : str4,
+                    "fld8" : str5,
+                    "fld9" : random.randint(0,10000000),
+                    "bin" : Binary("0") })
+
+            bulk.execute()
+           # print("populated " + dbname + "." + ns + " with " + str(docs_per) + " documents")
+                
+    # FsyncLock here
+    client.admin.command("fsync", lock=False)
+
+
+def launch_poc_driver(run_collections):
+    docs_per = working_set_docs / run_collections
+    FNULL = open(os.devnull, 'w')
     global java_proc
     command = ("java -jar bin/POCDriver.jar" \
                " -i " + str(insert_rate) + 
                " -u " + str(update_rate) +
                " -q " + str(query_rate) + 
-               " -z 10000000" 
-               " -d " + str(total_runtime) +
-               " -y " + str(num_collections) +
-               " -o out.csv -t " + str(worker_threads) +
-               " --incrementPeriod " + str(time_to_ramp) +
-               " --incrementIntvl " + str(ramp_interval)) 
+               " -z " + str(docs_per) +
+               " -d " + str(ramp_interval) +
+               " -y " + str(run_collections) +
+               " --collectionKeyMax " + str(docs_per) +
+               " -o out.csv -t " + str(worker_threads))
     print(command)
-    java_proc = subprocess.Popen(command, shell=True)
+    java_proc = subprocess.Popen(command, shell=True, stdout=FNULL)
 
 def load_from_config(filename):
-    global insert_rate, update_rate, query_rate, num_collections, total_runtime, time_to_ramp, ramp_interval, worker_threads, gross_throughput
+    global insert_rate, update_rate, query_rate, num_collections, total_runtime, time_to_ramp, ramp_interval, worker_threads, gross_throughput, collection_ramp_size, working_set_docs
     with open(filename, "r") as f:
         for line in f:
             arr = line.split('=')
@@ -80,6 +133,10 @@ def load_from_config(filename):
                 worker_threads = int(arr[1])
             if arr[0] == "throughput":
                 gross_throughput = int(arr[1])
+            if arr[0] == "rampsize":
+                collection_ramp_size = int(arr[1])
+            if arr[0] == "working_set_docs":
+                working_set_docs = int(arr[1])
 
 # Main
 if len(sys.argv) > 1:
@@ -88,18 +145,29 @@ if len(sys.argv) > 1:
 client = MongoClient('mongodb://localhost:27017/')
 fhandle = open(output_filename, 'a')
 fhandle.write("time,relative_time,inserts,collections,num_writes,write_latency,average_latency\n")
-launch_poc_driver()
-
 start=time.time()
-while (total_runtime > runtime):
-    now = time.time()
-    runtime = now - start
-    out = get_last_ops(client)
-    fhandle.write("%d,%d,%s\n" % (time.time(),runtime,out))
-    fhandle.flush()
-    time.sleep(1)
+go=True
+collections=collection_ramp_size
+while (go):
+    populate_collections(client, collections)
+    # Grab the recent latiencies and opctrs, as the populate can skew them
+    get_last_ops(client)
+    launch_poc_driver(collections)
+    start_interval = time.time()
+    interval_rutime = 0
+    avg_latencies = []
+    while (interval_rutime < ramp_interval): 
+        now = time.time()
+        runtime = now - start
+        interval_rutime = now - start_interval
+        out, avg_l = get_last_ops(client)
+        avg_latencies.append(avg_l)
+        fhandle.write("%d,%d,%s\n" % (time.time(),runtime,out))
+        fhandle.flush()
+        time.sleep(1)
+    collections += collection_ramp_size
+    # Work out if we should bail.
 
-# Kill the 
-os.kill(java_proc.pid, 5)
+# Close the results file 
 fhandle.close()
 

@@ -1,0 +1,10 @@
+runtime=43200 
+insert=0
+update=100
+read=0
+throughput=10000
+thread=64
+collections=1000000
+rampsize=100
+ramp_interval=300
+working_set_docs=1000000
