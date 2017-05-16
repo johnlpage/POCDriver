@@ -6,7 +6,6 @@ import time
 import subprocess
 import random
 import datetime
-import numpy
 import csv
 from pymongo import MongoClient
 from bson.binary import Binary
