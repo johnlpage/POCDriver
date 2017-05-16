@@ -8,3 +8,4 @@ collections=1000000
 rampsize=500
 ramp_interval=300
 working_set_docs=1000000
+fail_at_ms=10

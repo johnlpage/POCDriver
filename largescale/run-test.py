@@ -28,6 +28,7 @@ collection_ramp_rate = 1.25
 working_set_docs = 1000000
 collections_contents = {}
 output_csv = "out.csv"
+fail_at_ms = 10
 
 
 runtime = 0
@@ -145,6 +146,8 @@ def load_from_config(filename):
                 working_set_docs = int(arr[1])
             if arr[0] == "collection_ramp_rate":
                 collection_ramp_rate = float(arr[1])
+            if arr[0] == "fail_at_ms":
+                fail_at_ms = float(arr[1])
 
 def gather_avg(colls):
     data = csv.reader(open(output_csv, 'r'), delimiter=",")
@@ -172,6 +175,7 @@ fhandle = open(output_filename, 'a')
 fhandle.write("time,relative_time,inserts,collections,num_writes,write_latency,average_latency\n")
 start=time.time()
 go=True
+passed=1
 collections=collection_ramp_size
 while (go):
     populate_collections(client, collections)
@@ -193,9 +197,13 @@ while (go):
     res = gather_avg(collections)
     print("Run completed avg latency with " + str(collections) + " collections is " + str(res) + "ms/op")
     collections = int(collections * collection_ramp_rate)
-
+    if (time.time() - start) > total_runtime:
+        go=False
+        passed=0
+    if res > fail_at_ms:
+        go=False
     # Work out if we should bail.
 
 # Close the results file 
 fhandle.close()
-
+exit(passed)
