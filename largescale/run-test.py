@@ -23,6 +23,7 @@ ramp_interval = 300
 worker_threads = 32
 gross_throughput = 10000
 collection_ramp_size = 500
+collection_ramp_rate = 1.25
 working_set_docs = 1000000
 collections_contents = {}
 
@@ -101,13 +102,15 @@ def launch_poc_driver(run_collections):
     command = ("java -jar bin/POCDriver.jar" \
                " -i " + str(insert_rate) + 
                " -u " + str(update_rate) +
-               " -q " + str(query_rate) + 
+               " -k " + str(query_rate) +
+               " -q " + str(gross_throughput) + 
                " -z " + str(docs_per) +
                " -d " + str(ramp_interval) +
                " -y " + str(run_collections) +
                " --collectionKeyMax " + str(docs_per) +
                " -o out.csv -t " + str(worker_threads))
     print(command)
+    sys.stdout.flush()
     java_proc = subprocess.Popen(command, shell=True, stdout=FNULL)
 
 def load_from_config(filename):
@@ -137,6 +140,8 @@ def load_from_config(filename):
                 collection_ramp_size = int(arr[1])
             if arr[0] == "working_set_docs":
                 working_set_docs = int(arr[1])
+            if arr[0] == "collection_ramp_rate":
+            collection_ramp_rate = float(arr[1])
 
 # Main
 if len(sys.argv) > 1:
@@ -165,7 +170,7 @@ while (go):
         fhandle.write("%d,%d,%s\n" % (time.time(),runtime,out))
         fhandle.flush()
         time.sleep(1)
-    collections += collection_ramp_size
+    collections *= collection_ramp_rate
     # Work out if we should bail.
 
 # Close the results file 

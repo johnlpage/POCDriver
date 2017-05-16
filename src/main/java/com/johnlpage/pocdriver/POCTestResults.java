@@ -88,6 +88,12 @@ public class POCTestResults {
 		POCopStats os = opStats.get(opType);
 		return os.slowOps.get();
 	}
+
+	public Long GetTotalLatency(String opType)
+	{
+		POCopStats os = opStats.get(opType);
+		return os.totalLatency.getAndSet(0);
+	}
 	
 	public void RecordSlowOp(String opType, int number)
 	{
@@ -104,6 +110,12 @@ public class POCTestResults {
 		} else {
 		os.totalOpsDone.addAndGet(howmany);
 		}
+	}
+
+	public void RecordLatency(String opType, Long number) 
+	{
+		POCopStats os = opStats.get(opType);
+		os.totalLatency.addAndGet(number);
 	}
 
 	public void SetCollectionsNum(int num)

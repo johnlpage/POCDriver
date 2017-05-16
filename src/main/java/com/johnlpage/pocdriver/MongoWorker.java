@@ -328,6 +328,7 @@ public class MongoWorker implements Runnable {
 			testResults.RecordSlowOp("updates", ucount);
 		}
 		testResults.RecordOpsDone("inserts", icount);
+		testResults.RecordLatency("inserts", taken);
 		return true;
 		
 	}
@@ -354,6 +355,7 @@ public class MongoWorker implements Runnable {
 			if (taken > testOpts.slowThreshold) {
 				testResults.RecordSlowOp("keyqueries", 1);
 			}
+			testResults.RecordLatency("keyqueries", taken);
 			testResults.RecordOpsDone("keyqueries", 1);
 		}
 		return (Document) myDoc;
@@ -381,6 +383,7 @@ public class MongoWorker implements Runnable {
 		if (taken > testOpts.slowThreshold) {
 			testResults.RecordSlowOp("rangequeries", 1);
 		}
+		testResults.RecordLatency("rangequeries", taken);
 		testResults.RecordOpsDone("rangequeries", 1);
 
 	}
@@ -414,6 +417,7 @@ public class MongoWorker implements Runnable {
 			Document key) {
 		// Key Query
 		rotateCollection();
+		Date starttime = new Date();
 		Document query = new Document();
 		long changedfield = (long) getNextVal((int) testOpts.NUMBER_SIZE);
 
@@ -445,7 +449,10 @@ public class MongoWorker implements Runnable {
 		} else {
 			this.coll.findOneAndUpdate(query, change); //These are immediate not batches
 		}
+		Date endtime = new Date();
+		Long taken = endtime.getTime() - starttime.getTime();
 		testResults.RecordOpsDone("updates", 1);
+		testResults.RecordLatency("updates", taken);
 
 	}
 

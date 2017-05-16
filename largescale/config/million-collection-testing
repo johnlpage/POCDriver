@@ -5,6 +5,6 @@ read=0
 throughput=10000
 thread=64
 collections=1000000
-rampsize=100
+rampsize=500
 ramp_interval=300
 working_set_docs=1000000

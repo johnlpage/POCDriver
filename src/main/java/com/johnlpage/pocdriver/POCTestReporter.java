@@ -38,7 +38,7 @@ public class POCTestReporter implements Runnable {
 		}
 		outfile.print("system_clock,relative_clock,num_collections,total_inserts");
 		for (String o: opTypes) {
-			outfile.format(",%s,slowops_%s",o,o);
+			outfile.format(",%s,slowops_%s,latency_ms_%s",o,o,o);
 		}
 		outfile.println();
 		outfile.close();
@@ -115,6 +115,7 @@ public class POCTestReporter implements Runnable {
 					outfile.format(",%d", 0);
 				}
 			}
+			outfile.format(",%d", testResults.GetTotalLatency(o));
 			outtext.append("\n");
 		
 		}
