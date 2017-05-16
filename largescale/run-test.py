@@ -164,9 +164,6 @@ def gather_avg(colls):
 
 
 # Main
-
-gather_avg(1500)
-exit
 if len(sys.argv) > 1:
     load_from_config(sys.argv[1])
 
