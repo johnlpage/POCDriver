@@ -6,6 +6,8 @@ import time
 import subprocess
 import random
 import datetime
+import numpy
+import csv
 from pymongo import MongoClient
 from bson.binary import Binary
 from loremipsum import get_sentences
@@ -26,6 +28,7 @@ collection_ramp_size = 500
 collection_ramp_rate = 1.25
 working_set_docs = 1000000
 collections_contents = {}
+output_csv = "out.csv"
 
 
 runtime = 0
@@ -108,7 +111,8 @@ def launch_poc_driver(run_collections):
                " -d " + str(ramp_interval) +
                " -y " + str(run_collections) +
                " --collectionKeyMax " + str(docs_per) +
-               " -o out.csv -t " + str(worker_threads))
+               " -o " + str(output_csv) +
+               " -t " + str(worker_threads))
     print(command)
     sys.stdout.flush()
     java_proc = subprocess.Popen(command, shell=True, stdout=FNULL)
@@ -141,9 +145,29 @@ def load_from_config(filename):
             if arr[0] == "working_set_docs":
                 working_set_docs = int(arr[1])
             if arr[0] == "collection_ramp_rate":
-            collection_ramp_rate = float(arr[1])
+                collection_ramp_rate = float(arr[1])
+
+def gather_avg(colls):
+    data = csv.reader(open(output_csv, 'r'), delimiter=",")
+    latency = {}
+    ops = {}
+    for row in data:
+        if row[0] != "system_clock":
+            coll_count = int(row[2])
+            if coll_count not in latency:
+                latency[coll_count] = 0
+                ops[coll_count] = 0
+            latency[coll_count] += (int(row[6]))
+            ops[coll_count] += int(row[10])
+    #print("Gross latency is " + str(latency[colls]) + ". Gross ops is " + str(ops[colls]))
+    #print("Avg latency per op " + str(float(latency[colls])/ops[colls]))
+    return float(latency[colls])/ops[colls]
+
 
 # Main
+
+gather_avg(1500)
+exit
 if len(sys.argv) > 1:
     load_from_config(sys.argv[1])
 
@@ -170,7 +194,10 @@ while (go):
         fhandle.write("%d,%d,%s\n" % (time.time(),runtime,out))
         fhandle.flush()
         time.sleep(1)
-    collections *= collection_ramp_rate
+    res = gather_avg(collections)
+    print("Run completed avg latency with " + str(collections) + " collections is " + str(res) + "ms/op")
+    collections = int(collections * collection_ramp_rate)
+
     # Work out if we should bail.
 
 # Close the results file 
