@@ -44,12 +44,15 @@ def get_last_ops(client):
     ops = res['opcounters']
     gross = ops['insert'] + ops['update']
     last_gross = last_ops['insert'] + last_ops['update']
-    writes = res['opLatencies']['writes']['ops'] - last_ops['writes']
-    write_latency = res['opLatencies']['writes']['latency'] - last_ops['write_latency']
+    writes = 0
+    write_latency = 0
+    if 'opLatencies' in res:
+        writes = res['opLatencies']['writes']['ops'] - last_ops['writes']
+        write_latency = res['opLatencies']['writes']['latency'] - last_ops['write_latency']
+        last_ops['writes'] = res['opLatencies']['writes']['ops']
+        last_ops['write_latency'] = res['opLatencies']['writes']['latency']
     last_ops['insert'] = ops['insert']
     last_ops['update'] = ops['update']
-    last_ops['writes'] = res['opLatencies']['writes']['ops']
-    last_ops['write_latency'] = res['opLatencies']['writes']['latency']
     collections = client[dbname].command('dbstats')['collections']
     avg_latency = 0
     if writes > 0:
