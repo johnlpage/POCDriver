@@ -153,6 +153,7 @@ public class MongoWorker implements Runnable {
 		incrementRate = t.incrementRate;
 		incrementIntvl = t.incrementIntvl;
 		collectionKeyRange = t.coll_key_range;
+		rng = new Random();
 
 		if (maxCollections > 1) {
 			colls = new ArrayList<MongoCollection<Document>>();
@@ -172,7 +173,6 @@ public class MongoWorker implements Runnable {
 		sequence = getHighestID();
 
 		ReviewShards();
-		rng = new Random();
 		if (testOpts.zipfian) {
 			zipfian = true;
 			zipf = new ZipfDistribution(testOpts.zipfsize, 0.99);
@@ -405,7 +405,7 @@ public class MongoWorker implements Runnable {
 			}
 			coll = colls.get(nextCollection);
 			currCollection = nextCollection;
-			nextCollection = getNextSequenceNum(curCollections) % curCollections;
+			nextCollection = getNextSequenceNum(curCollections);
 		}
 	}	
 
