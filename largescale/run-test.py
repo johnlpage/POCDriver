@@ -120,7 +120,7 @@ def launch_poc_driver(run_collections):
     java_proc = subprocess.Popen(command, shell=True, stdout=FNULL)
 
 def load_from_config(filename):
-    global insert_rate, update_rate, query_rate, num_collections, total_runtime, time_to_ramp, ramp_interval, worker_threads, gross_throughput, collection_ramp_size, working_set_docs
+    global insert_rate, update_rate, query_rate, num_collections, total_runtime, time_to_ramp, ramp_interval, worker_threads, gross_throughput, collection_ramp_size, working_set_docs, collection_ramp_rate, fail_at_ms
     with open(filename, "r") as f:
         for line in f:
             arr = line.split('=')
@@ -149,7 +149,7 @@ def load_from_config(filename):
             if arr[0] == "collection_ramp_rate":
                 collection_ramp_rate = float(arr[1])
             if arr[0] == "fail_at_ms":
-                fail_at_ms = float(arr[1])
+                fail_at_ms = int(arr[1])
 
 def gather_avg(colls):
     data = csv.reader(open(output_csv, 'r'), delimiter=",")
