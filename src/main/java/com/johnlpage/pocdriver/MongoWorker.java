@@ -42,7 +42,7 @@ public class MongoWorker implements Runnable {
 	String workflow;
 	int workflowStep = 0;
 	ArrayList<Document> keyStack;
-	int lastCollection;
+	int nextCollection;
 	int currCollection;
 	int maxCollections;
 	int curCollections;
@@ -156,7 +156,7 @@ public class MongoWorker implements Runnable {
 
 		if (maxCollections > 1) {
 			colls = new ArrayList<MongoCollection<Document>>();
-			lastCollection = 0;
+			nextCollection = 0;
 			currCollection = 0;
 			for (int i = 0; i < maxCollections; i++) {
 				StringBuilder str = new StringBuilder(0);
@@ -403,9 +403,9 @@ public class MongoWorker implements Runnable {
 					testResults.SetCollectionsNum(curCollections);
 				}
 			}
-			coll = colls.get(lastCollection);
-			currCollection = lastCollection;
-			lastCollection = (lastCollection + 1) % curCollections;
+			coll = colls.get(nextCollection);
+			currCollection = nextCollection;
+			nextCollection = getNextSequenceNum(curCollections) % curCollections;
 		}
 	}	
 

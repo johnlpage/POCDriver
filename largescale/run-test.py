@@ -29,6 +29,7 @@ working_set_docs = 1000000
 collections_contents = {}
 output_csv = "out.csv"
 fail_at_ms = 10
+batch_size = 1
 
 
 runtime = 0
@@ -112,7 +113,8 @@ def launch_poc_driver(run_collections):
                " -y " + str(run_collections) +
                " --collectionKeyMax " + str(docs_per) +
                " -o " + str(output_csv) +
-               " -t " + str(worker_threads))
+               " -t " + str(worker_threads) +
+               " -b " + str(batch_size))
     print(command)
     sys.stdout.flush()
     java_proc = subprocess.Popen(command, shell=True, stdout=FNULL)
