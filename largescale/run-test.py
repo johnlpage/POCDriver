@@ -180,6 +180,7 @@ fhandle = open(output_filename, 'a')
 fhandle.write("time,relative_time,inserts,collections,num_writes,write_latency,average_latency\n")
 start=time.time()
 go=True
+fail_run=False
 passed=1
 collections=collection_ramp_size
 while (go):
@@ -206,7 +207,10 @@ while (go):
         go=False
         passed=0
     if res > fail_at_ms:
-        go=False
+        if fail_run == False:
+            fail_run=True
+        else:
+            go=False
     # Work out if we should bail.
 
 # Close the results file 
