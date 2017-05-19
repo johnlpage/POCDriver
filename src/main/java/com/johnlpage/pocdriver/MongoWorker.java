@@ -37,6 +37,7 @@ public class MongoWorker implements Runnable {
 	int numShards = 0;
 	Random rng;
 	ZipfDistribution zipf;
+	ZipfDistribution collectionzipf;
 	boolean workflowed = false;
 	boolean zipfian = false;
 	String workflow;
@@ -157,7 +158,7 @@ public class MongoWorker implements Runnable {
 
 		if (maxCollections > 1) {
 			colls = new ArrayList<MongoCollection<Document>>();
-			nextCollection = 0;
+			nextCollection = 0;;
 			currCollection = 0;
 			for (int i = 0; i < maxCollections; i++) {
 				StringBuilder str = new StringBuilder(0);
@@ -390,6 +391,7 @@ public class MongoWorker implements Runnable {
 
 	private void rotateCollection() {
 		if (maxCollections > 1) {
+			collectionzipf = new ZipfDistribution(curCollections -1, 0.99);
 			if(incrementIntvl > 0 && curCollections < maxCollections) {
 				Date now = new Date();
 				int secondsSinceLastCheck = (int)(now.getTime() - lastIncTime.getTime()) / 1000;
@@ -405,7 +407,7 @@ public class MongoWorker implements Runnable {
 			}
 			coll = colls.get(nextCollection);
 			currCollection = nextCollection;
-			nextCollection = getNextSequenceNum(curCollections);
+			nextCollection = collectionzipf.sample();
 		}
 	}	
 
@@ -489,7 +491,9 @@ public class MongoWorker implements Runnable {
 					double threads = testOpts.numThreads;
 					double opsperthreadsecond = testOpts.opsPerSecond / threads;
 					double sleeptimems = 1000 / opsperthreadsecond;
-					
+
+					if (sleeptimems < 1)
+						sleeptimems = 1;
 					if(c==1){
 						//First time randomise
 			
