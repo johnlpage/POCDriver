@@ -345,8 +345,14 @@ public class MongoWorker implements Runnable {
 
 		int recordno = rest + getNextVal(range);
 
-		query.append("_id",
+		if (collectionKeyRange > 0) {
+                        int val = collectionHash.get(currCollection);
+                        query.append("_id", val);
+                        collectionHash.set(currCollection, ++val);
+		} else {
+			query.append("_id",
 				new Document("w", workerID).append("i", recordno));
+		}
 		Date starttime = new Date();
 		Document myDoc = (Document) coll.find(query).first();
 		if (myDoc != null) {
