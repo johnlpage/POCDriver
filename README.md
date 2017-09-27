@@ -14,7 +14,7 @@ This tool is to make it easy to answer many of the questions people have during 
 
 POCDriver a single JAR file which allows you to specify and run a number of different workloads easily from the command line. It is intended to show how MongoDB should be used for various tasks and avoid's testing your own client code versus MongoDB's capailities. POCDriver is an alternative to using generic tools like YCSB. Unlike these tools POCDriver:
   * Only works with MongoDB - showing what MongoDB can do rather than comparing lowest common denominator between systems that aren't directly comaprable.
-  * Includes much more sopisticated workloads - using the appropriate MongoDB feature.
+  * Includes much more sophisticated workloads - using the appropriate MongoDB feature.
 
   This is NOT in any way an official MongoDB product or project.
 
@@ -34,7 +34,7 @@ and you will find POCDriver.jar in bin folder.
 Basic usage
 -----------
 
-If run with no arguments POCDriver will insert records onto a monogdb running on localhost as quickly as possible. 
+If run with no arguments POCDriver will insert records onto a mongoDB running on localhost as quickly as possible. 
 There will be only the _id index and records will have 10 fields.
 
 Use --print to see what the records look like.
