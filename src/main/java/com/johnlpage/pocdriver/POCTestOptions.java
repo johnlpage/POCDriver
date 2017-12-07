@@ -43,6 +43,9 @@ public class POCTestOptions {
 	int arraytop = 0;
 	int arraynext = 0;
 	int numcollections = 1;
+	int rangeDocs=10;
+	int updateFields=1;
+	int projectFields=0;
 
 	//Zipfian stuff
 	boolean zipfian = false;
@@ -95,6 +98,9 @@ public class POCTestOptions {
 		cliopt.addOption(null,"threadIdStart",true,"Start 'workerId' for each thread. 'w' value in _id. (default 0)");
 		cliopt.addOption(null,"fulltext",false,"Create fulltext index (default false)");
 		cliopt.addOption(null,"binary",true,"add a binary blob of size KB");
+		cliopt.addOption(null,"rangedocs",true,"Number of documents to fetch for range queries (default 10)");
+		cliopt.addOption(null,"updatefields",true,"Number of fields to update (default 1)");
+		cliopt.addOption(null,"projectfields",true,"Number of fields to project in finds (default 0, which is no projection)");				
 		
 		CommandLine cmd = parser.parse(cliopt, args);
 		
@@ -144,8 +150,6 @@ public class POCTestOptions {
 			arraytop = Integer.parseInt(parts[0]);
 			arraynext = Integer.parseInt(parts[1]);
 		}
-		
-		
 		
 		if(cmd.hasOption("e"))
 		{
@@ -197,10 +201,10 @@ public class POCTestOptions {
 			singleserver=true;
 		}
 		if(cmd.hasOption("z"))
-                {
+		{
 			zipfian = true;
-                        zipfsize = Integer.parseInt(cmd.getOptionValue("z"));
-                }
+			zipfsize = Integer.parseInt(cmd.getOptionValue("z"));
+		}
 		
 		if(cmd.hasOption("o"))
 		{
@@ -269,6 +273,20 @@ public class POCTestOptions {
 		{
 			threadIdStart = Integer.parseInt(cmd.getOptionValue("threadIdStart"));
 		}
-		
+
+		if(cmd.hasOption("rangedocs"))
+		{
+			rangeDocs = Integer.parseInt(cmd.getOptionValue("rangedocs"));
+		}
+
+		if(cmd.hasOption("updatefields"))
+		{
+			updateFields = Integer.parseInt(cmd.getOptionValue("updatefields"));
+		}
+
+		if(cmd.hasOption("projectfields"))
+		{
+			projectFields = Integer.parseInt(cmd.getOptionValue("projectfields"));
+		}
 	}
 }

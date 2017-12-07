@@ -3,7 +3,7 @@ Recently upgraded to MongoDB 3.4.0 Driver.
 
 Introduction
 ------------
-This is open source, immature, and undoubtably buggy code - if you find bugs fix them and send me a pull request or let me know (johnlpage@gmail.com)
+This is open source, immature, and undoubtedly buggy code - if you find bugs fix them and send me a pull request or let me know (johnlpage@gmail.com)
  
 This tool is to make it easy to answer many of the questions people have during a MongoDB 'Proof of Concept'
 
@@ -12,9 +12,9 @@ This tool is to make it easy to answer many of the questions people have during 
 * How does MongoDB scale.
 * How does the High Availability Work / how do I handle a failover.
 
-POCDriver a single JAR file which allows you to specify and run a number of different workloads easily from the command line. It is intended to show how MongoDB should be used for various tasks and avoid's testing your own client code versus MongoDB's capailities. POCDriver is an alternative to using generic tools like YCSB. Unlike these tools POCDriver:
-  * Only works with MongoDB - showing what MongoDB can do rather than comparing lowest common denominator between systems that aren't directly comaprable.
-  * Includes much more sopisticated workloads - using the appropriate MongoDB feature.
+POCDriver a single JAR file which allows you to specify and run a number of different workloads easily from the command line. It is intended to show how MongoDB should be used for various tasks and avoid's testing your own client code versus MongoDB's capabilities. POCDriver is an alternative to using generic tools like YCSB. Unlike these tools POCDriver:
+  * Only works with MongoDB - showing what MongoDB can do rather than comparing lowest common denominator between systems that aren't directly comparable.
+  * Includes much more sophisticated workloads - using the appropriate MongoDB feature.
 
   This is NOT in any way an official MongoDB product or project.
 
@@ -45,7 +45,7 @@ Client options
 -h show help
 -p show what the records look like in the test
 -t how many threads to run on the client and thus how many connections.
--s what threshold to consider slow when repoting latency percentages in ms
+-s what threshold to consider slow when reporting latency percentages in ms
 -o output stats to a file rather then the screen
 -n use a namespace 'schema.collection' of your choice
 -d how long to run the loader for.
@@ -77,6 +77,9 @@ Control options
  -m when updating a record use findAndModify to fetch a copy of the new incremented value
  -j when updating or querying limit the set to the last N% of records added
  -b what size to use for operation batches.
+ --rangedocs     number of documents to fetch for range queries (default 10)
+ --updatefields  number of fields to update (default 1)
+ --projectfields number of fields to project in finds (default 0 - return full document)
 ```
 Collection options
 -------------------
@@ -89,8 +92,8 @@ Record shape options
 --------------------
 ```
 -a add an X by Y array of integers to each record using -a X:Y
--f asisde from arrays and _id add f fields to the record, after the first 3 every third is an integer, every fifth a date, the rest are text.
--l how many characters to haev in the text fields
+-f aside from arrays and _id add f fields to the record, after the first 3 every third is an integer, every fifth a date, the rest are text.
+-l how many characters to have in the text fields
 ```
 
 Example
