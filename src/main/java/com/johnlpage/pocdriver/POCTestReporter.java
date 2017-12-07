@@ -31,17 +31,16 @@ public class POCTestReporter implements Runnable {
 	private void logData()
 	{
 		PrintWriter outfile = null;
-		
+
 		if(testOpts.logfile != null)
 		{
-			
+
 			try {
 			     outfile = new PrintWriter(new BufferedWriter(new FileWriter(testOpts.logfile, true)));
 			} catch (IOException e) {
 			   System.out.println(e.getMessage());
 			}
 		}
-		
 
 		Long insertsDone = testResults.GetOpsDone("inserts");
 		if (testResults.GetSecondsElapsed() < testOpts.reportTime)
@@ -55,13 +54,13 @@ public class POCTestReporter implements Runnable {
 			}
 		System.out.format("After %d seconds, %d new records inserted - collection has %d in total \n",
 				testResults.GetSecondsElapsed(), insertsDone, testResults.initialCount + insertsDone);
-		
+
 		if(outfile != null)
 		{
 			outfile.format("%d,%d", testResults.GetSecondsElapsed(), insertsDone);
 		}
-		
-		
+
+
 		HashMap<String, Long> results = testResults
 				.GetOpsPerSecondLastInterval();
 		String[] opTypes = POCTestResults.opTypes;
@@ -70,13 +69,18 @@ public class POCTestReporter implements Runnable {
 		{
 			System.out.format("%d %s per second since last report ",
 					results.get(o), o);
-			
+
 			if(outfile != null)
 			{
-				outfile.format(",%s,%d", o,results.get(o));
+				Date todaysdate = new Date();
+				DateFormat df2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+				String str = df2.format(todaysdate);
+				String mydate = str.replaceAll("\\s+", "T");
+				outfile.format("%s,%d,%d", new Object[] {
+					mydate, testResults.GetSecondsElapsed(), insertsDone
+				});
 			}
-			
-			
+
 			Long opsDone = testResults.GetOpsDone(o);
 			if (opsDone > 0) {
 				Double fastops = 100 - (testResults.GetSlowOps(o) * 100.0)
@@ -93,7 +97,7 @@ public class POCTestReporter implements Runnable {
 				{ outfile.format(",%d", 100);}
 			}
 			System.out.println();
-		
+
 		}
 		if(outfile != null)
 		{ outfile.println();
@@ -101,10 +105,10 @@ public class POCTestReporter implements Runnable {
 		}
 		System.out.println();
 	}
-	
+
 	public void run() {
 
 		logData();
-	
+
 	}
 }
