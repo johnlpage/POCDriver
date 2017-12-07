@@ -320,7 +320,21 @@ public class MongoWorker implements Runnable {
 		query.append("_id",
 				new Document("w", workerID).append("i", recordno));
 		Date starttime = new Date();
-		Document myDoc = (Document) coll.find(query).first();
+		Document myDoc;
+		List<String> projFields = new ArrayList<String>(testOpts.numFields);
+		
+		if (testOpts.projectFields == 0) {
+			myDoc = coll.find(query).first();
+		} else {
+			int numProjFields = (testOpts.projectFields <= testOpts.numFields) ? testOpts.projectFields : testOpts.numFields;
+			int i = 0;
+			while(i < numProjFields) {
+				projFields.add("fld" + i);
+				i++;
+			}
+			myDoc = coll.find(query).projection(fields(include(projFields))).first();
+		}
+		
 		if (myDoc != null) {
 
 			Date endtime = new Date();
@@ -339,16 +353,29 @@ public class MongoWorker implements Runnable {
 		// Key Query
 		rotateCollection();
 		Document query = new Document();
+		List<String> projFields = new ArrayList<String>(testOpts.numFields);
 		int recordno =  getNextVal(sequence);
 		query.append("_id", new Document("$gt", new Document("w",
 				workerID).append("i", recordno)));
 		Date starttime = new Date();
-		MongoCursor<Document>  cursor = coll.find(query).limit(20).iterator();
+		MongoCursor<Document>  cursor;
+		if (testOpts.projectFields == 0) {
+			cursor = coll.find(query).limit(testOpts.rangeDocs).iterator();
+		} else {
+			int numProjFields = (testOpts.projectFields <= testOpts.numFields) ? testOpts.projectFields : testOpts.numFields;
+			int i = 0;
+			while(i < numProjFields) {
+				projFields.add("fld" + i);
+				i++;
+			}
+			cursor = coll.find(query).projection(fields(include(projFields))).limit(testOpts.rangeDocs).iterator();
+		}
 		while (cursor.hasNext()) {
 
 			@SuppressWarnings("unused")
 			Document obj = cursor.next();
 		}
+		cursor.close();
 
 		Date endtime = new Date();
 		Long taken = endtime.getTime() - starttime.getTime();
@@ -375,7 +402,7 @@ public class MongoWorker implements Runnable {
 		// Key Query
 		rotateCollection();
 		Document query = new Document();
-		long changedfield = (long) getNextVal((int) testOpts.NUMBER_SIZE);
+		Document change;
 
 		if (key == null) {
 			int range = sequence * testOpts.workingset / 100;
@@ -388,26 +415,42 @@ public class MongoWorker implements Runnable {
 		} else {
 			query.append("_id", key);
 		}
-		Document fields = new Document("fld0", changedfield);
-		Document change = new Document("$set", fields);
 
+		int updateFields = (testOpts.updateFields <= testOpts.numFields) ? testOpts.updateFields : testOpts.numFields;
+
+		if (updateFields == 1) {
+			long changedfield = (long) getNextVal((int) testOpts.NUMBER_SIZE);
+			Document fields = new Document("fld0", changedfield);
+			change = new Document("$set", fields);
+		} else {
+			TestRecord tr = createNewRecord();
+			tr.internalDoc.remove("_id");
+			change = new Document("$set", tr.internalDoc);
+		}
+			
 		if (testOpts.findandmodify == false) {
-			bulkWriter.add(new UpdateManyModel<Document>(query,change));
+			bulkWriter.add(new UpdateManyModel<Document>(query, change));
 		} else {
 			this.coll.findOneAndUpdate(query, change); //These are immediate not batches
 		}
 		testResults.RecordOpsDone("updates", 1);
-
 	}
 
-	private TestRecord insertNewRecord(List<WriteModel<Document>>  bulkWriter) {
-		TestRecord tr;
+	private TestRecord createNewRecord() {
 		int[] arr = new int[2];
 		arr[0] = testOpts.arraytop;
 		arr[1] = testOpts.arraynext;
-		tr = new TestRecord(testOpts.numFields, testOpts.textFieldLen,
+		TestRecord tr = new TestRecord(testOpts.numFields, testOpts.textFieldLen,
 				workerID, sequence++, testOpts.NUMBER_SIZE, testOpts.numShards,
 				arr,testOpts.blobSize);
+		return tr;
+	}
+	
+	private TestRecord insertNewRecord(List<WriteModel<Document>>  bulkWriter) {
+		int[] arr = new int[2];
+		arr[0] = testOpts.arraytop;
+		arr[1] = testOpts.arraynext;
+		TestRecord tr = createNewRecord();
 
 		bulkWriter.add(new InsertOneModel<Document>(tr.internalDoc));
 		return tr;
