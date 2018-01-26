@@ -21,7 +21,6 @@ public class POCTestOptions {
 	int threadIdStart = 0;
 	int reportTime = 10;
 	int slowThreshold = 50;
-	boolean logstats = false;
 	int insertops = 100;
 	int opsPerSecond = 0;
 	int keyqueries = 0;
@@ -33,7 +32,7 @@ public class POCTestOptions {
 	String logfile = null;
 	boolean sharded = false;
 	boolean singleserver = false;
-	String statsfile = "pocload.csv";
+	private String statsfile = "pocload.csv";
 	String databaseName = "POCDB";
 	String collectionName = "POCCOLL";
 	String workflow = null;
@@ -51,19 +50,15 @@ public class POCTestOptions {
 	boolean zipfian = false;
 	int zipfsize = 0;
 
-    String username = null;
-    char[] password = null;
-    String authDatabase = null;
     int blobSize = 0;
 
 	boolean findandmodify=false;
 	int workingset = 100;
 	boolean helpOnly = false;
 	String connectionDetails = "mongodb://localhost:27017";
-	int multistage =0;
-    boolean fulltext;
+	boolean fulltext;
 	
-	public POCTestOptions(String[] args) throws ParseException
+	POCTestOptions(String[] args) throws ParseException
 	{
 		CommandLineParser parser = new DefaultParser();
 		
@@ -257,7 +252,6 @@ public class POCTestOptions {
 		if(cmd.hasOption("o"))
 		{
 			statsfile = cmd.getOptionValue("o");
-			logstats = true;
 		}
 		
 		if(cmd.hasOption("t"))

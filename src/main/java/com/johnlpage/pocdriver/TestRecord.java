@@ -18,19 +18,17 @@ import de.svenjacobs.loremipsum.LoremIpsum;
 public class TestRecord {
 
 	Document internalDoc;
-	Random rng;
-	final double VOCAB_SIZE = 100000;
-	final int loremLen = 512;
-	static ArrayList<ArrayList<Integer>> ar;
-	static String loremText = null;
+	private Random rng;
+	private static ArrayList<ArrayList<Integer>> ar;
+	private static String loremText = null;
 	
-	static Binary blobData = null;
+	private static Binary blobData = null;
 		
-	private String CreateString(int length, int fieldNo) {
+	private String CreateString(int length) {
 		
 		if( loremText == null )
 		{
-			loremText = new String();
+			loremText = "";
 			LoremIpsum loremIpsum = new LoremIpsum();
 			//System.out.println("Generating sample data");
 			loremText = loremIpsum.getWords( 1000 ); 
@@ -42,11 +40,12 @@ public class TestRecord {
 		StringBuilder sb = new StringBuilder();
 		Double d = rng.nextDouble();
 
-		int r = (int) Math.abs(Math.floor( d * (loremText.length() - (loremLen + 20)))); 
+		int loremLen = 512;
+		int r = (int) Math.abs(Math.floor( d * (loremText.length() - (loremLen + 20))));
 		int e = r + loremLen;
 		
 		while(loremText.charAt(r) != ' ') r++; r++;
-		while(loremText.charAt(e) != ' ') e++;;
+		while(loremText.charAt(e) != ' ') e++;
 		String chunk = loremText.substring(r, e);
 	
 		sb.append(chunk);
@@ -66,16 +65,9 @@ public class TestRecord {
 		//Remove partial words
 		r=0;
 		e=rs.length() -1;
-		while(rs.charAt(e) != ' ') e--;;
+		while(rs.charAt(e) != ' ') e--;
 		rs = rs.substring(r, e);
 		return rs;
-	}
-
-	public Document RemoveOID()
-	{
-		Document d = (Document) internalDoc.get("_id");
-		internalDoc.remove("_id");
-		return d;
 	}
 
 	// This needs to be clever as we really need to be able to
@@ -83,7 +75,7 @@ public class TestRecord {
 	// Therefore we will have a one-up per thread
 	// A thread starting will find out what it's highest was
 
-	public void AddOID(int workerid, int sequence) {
+	private void AddOID(int workerid, int sequence) {
 		Document oid = new Document("w",workerid).append("i", sequence);
 		internalDoc.append("_id", oid);
 	}
@@ -91,7 +83,7 @@ public class TestRecord {
 	// Just so we always know what the type of a given field is
 	// Useful for querying, indexing etc
 
-	static public int getFieldType(int fieldno) {
+	private static int getFieldType(int fieldno) {
 		if (fieldno == 0) {
 			return 0; // Int
 		}
@@ -115,14 +107,11 @@ public class TestRecord {
 		return 1; // Text
 	}
 
-	public TestRecord(int nFields, int fieldSize, int workerID, int sequence,
-			long numberSize, int numShards, int[] array,int binsize) {
+	TestRecord(int nFields, int fieldSize, int workerID, int sequence, long numberSize, int[] array, int binsize) {
 		internalDoc = new Document();
 		rng = new Random();
 		int fieldNo;
-		
-		
-		
+
 		// Always a field 0
 		AddOID(workerID, sequence);
 		for (fieldNo = 0; (fieldNo < nFields || fieldNo == 0); fieldNo++) {
@@ -149,7 +138,7 @@ public class TestRecord {
 				internalDoc.append("fld" + fieldNo, now);
 			} else {
 				// put in a string
-				String fieldContent = CreateString(fieldSize, fieldNo);
+				String fieldContent = CreateString(fieldSize);
 				internalDoc.append("fld" + fieldNo, fieldContent);
 			}
 		}
