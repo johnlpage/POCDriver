@@ -21,47 +21,47 @@ public class TestRecord {
 	private Random rng;
 	private static ArrayList<ArrayList<Integer>> ar;
 	private static String loremText = null;
-	
+
 	private static Binary blobData = null;
-		
+
 	private String CreateString(int length) {
-		
+
 		if( loremText == null )
 		{
 			loremText = "";
 			LoremIpsum loremIpsum = new LoremIpsum();
 			//System.out.println("Generating sample data");
-			loremText = loremIpsum.getWords( 1000 ); 
+			loremText = loremIpsum.getWords( 1000 );
 		}
-		
-	
+
+
 		//System.out.println("Done");
-		
+
 		StringBuilder sb = new StringBuilder();
 		Double d = rng.nextDouble();
 
 		int loremLen = 512;
 		int r = (int) Math.abs(Math.floor( d * (loremText.length() - (loremLen + 20))));
 		int e = r + loremLen;
-		
+
 		while(loremText.charAt(r) != ' ') r++; r++;
 		while(loremText.charAt(e) != ' ') e++;
 		String chunk = loremText.substring(r, e);
-	
+
 		sb.append(chunk);
-		
-		
+
+
 		//Double to size
-		
+
 		while(sb.length() < length)
 		{
 		//	System.out.println(" SB " + sb.length() + " of " + length);
 			sb.append(sb.toString());
 		}
-		
+
 		//Trim to fit
 		String rs = sb.toString().substring(0,length);
-		
+
 		//Remove partial words
 		r=0;
 		e=rs.length() -1;
@@ -107,41 +107,15 @@ public class TestRecord {
 		return 1; // Text
 	}
 
-	TestRecord(int nFields, int fieldSize, int workerID, int sequence, long numberSize, int[] array, int binsize) {
+	TestRecord(int nFields, int depth, int stringLength, int workerID, int sequence, long numberSize, int[] array, int binsize) {
 		internalDoc = new Document();
 		rng = new Random();
-		int fieldNo;
 
 		// Always a field 0
 		AddOID(workerID, sequence);
-		for (fieldNo = 0; (fieldNo < nFields || fieldNo == 0); fieldNo++) {
-			int fType = getFieldType(fieldNo);
-			if (fType == 0) {
-				// Field should always be a long this way
 
-				long r = (long) Math.abs(Math.floor(rng.nextGaussian()
-						* numberSize));
+		addFields(internalDoc, 0, nFields, depth, stringLength, numberSize);
 
-				internalDoc.append("fld" + fieldNo, r);
-			} else if (fieldNo == 1 || fType == 2) // Field 2 is always a date
-													// as is every 5th
-			{
-				// long r = (long) Math.abs(Math.floor(rng.nextGaussian() *
-				// Long.MAX_VALUE));
-				Date now = new Date();
-				// Subtract up to a few years
-				long t = now.getTime();
-				// Push it back 30 years or so
-				t = (long) (t - Math
-						.abs(Math.floor(rng.nextGaussian() * 100000000 * 3000)));
-				now.setTime(t);
-				internalDoc.append("fld" + fieldNo, now);
-			} else {
-				// put in a string
-				String fieldContent = CreateString(fieldSize);
-				internalDoc.append("fld" + fieldNo, fieldContent);
-			}
-		}
 		if (array[0] > 0) {
 			if (ar == null) {
 				ar = new ArrayList<ArrayList<Integer>>(array[0]);
@@ -155,13 +129,62 @@ public class TestRecord {
 			}
 			internalDoc.append("arr", ar);
 		}
-		if( blobData == null ) {
-			byte[] data = new byte[binsize*1024];
+		if (blobData == null) {
+			byte[] data = new byte[binsize * 1024];
 			rng.nextBytes(data);
-			blobData = new Binary(BsonBinarySubType.BINARY,data);
+			blobData = new Binary(BsonBinarySubType.BINARY, data);
 		}
-		
+
 		internalDoc.append("bin", blobData);
+	}
+
+	/**
+	 * @param seq	 The sequence for this document as a whole
+	 * @param nFields The numbers of fields for this sub-document
+	 * @return the number of new fields added
+	 */
+	private int addFields(Document doc, int seq, int nFields, int depth, int stringLength, long numberSize) {
+		int fieldNo = seq;
+		if (depth > 0) {
+			// we need to create nodes not leaves
+			int perLevel = (int) Math.pow(nFields, 1f / (depth + 1));
+			for (int i = 0; i < perLevel; i++) {
+				Document node = new Document();
+				doc.append("node" + i, node);
+				fieldNo += addFields(node, fieldNo, nFields / perLevel, depth - 1, stringLength, numberSize);
+			}
+		}
+		// fields
+		while (fieldNo < nFields + seq) {
+			int fType = getFieldType(fieldNo);
+			if (fType == 0) {
+				// Field should always be a long this way
+
+				long r = (long) Math.abs(Math.floor(rng.nextGaussian()
+						* numberSize));
+
+				doc.append("fld" + fieldNo, r);
+			} else if (fieldNo == 1 || fType == 2) // Field 2 is always a date
+			// as is every 5th
+			{
+				// long r = (long) Math.abs(Math.floor(rng.nextGaussian() *
+				// Long.MAX_VALUE));
+				Date now = new Date();
+				// Subtract up to a few years
+				long t = now.getTime();
+				// Push it back 30 years or so
+				t = (long) (t - Math
+						.abs(Math.floor(rng.nextGaussian() * 100000000 * 3000)));
+				now.setTime(t);
+				doc.append("fld" + fieldNo, now);
+			} else {
+				// put in a string
+				String fieldContent = CreateString(stringLength);
+				doc.append("fld" + fieldNo, fieldContent);
+			}
+			fieldNo++;
+		}
+		return fieldNo - seq;
 	}
 
 }
