@@ -1,9 +1,7 @@
 package com.johnlpage.pocdriver;
 
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Random;
+import java.util.*;
 
 import org.bson.BsonBinarySubType;
 import org.bson.Document;
@@ -186,5 +184,24 @@ public class TestRecord {
 		}
 		return fieldNo - seq;
 	}
+
+    public List<String> listFields() {
+        List<String> fields = new ArrayList<String>();
+        collectFields(internalDoc, "", fields);
+        return fields;
+    }
+
+    private void collectFields(Document doc, String prefix, List<String> fields) {
+        Set<String> keys = doc.keySet();
+        for (String key : keys) {
+            if (key.startsWith("fld")) {
+                fields.add(prefix + key);
+            } else if (key.startsWith("node")) {
+                // node
+                Document node = (Document) doc.get(key);
+                collectFields(node, prefix + key + ".", fields);
+            }
+        }
+    }
 
 }

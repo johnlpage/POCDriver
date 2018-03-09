@@ -5,6 +5,7 @@ import org.bson.json.JsonMode;
 import org.bson.json.JsonWriterSettings;
 import org.junit.*;
 
+import java.util.List;
 import java.util.Set;
 
 import static org.junit.Assert.*;
@@ -42,6 +43,11 @@ public class TestRecordTest {
         assertTrue(testRecord.internalDoc.containsKey("node2"));
         Document node2 = (Document) testRecord.internalDoc.get("node2");
         assertTrue(node2.containsKey("fld10"));
+        // test field lists
+        List<String> fields = testRecord.listFields();
+        System.out.println(fields);
+        assertEquals(nFields, fields.size());
+        assertTrue(fields.contains("node2.fld10"));
     }
 
     /**
@@ -62,6 +68,11 @@ public class TestRecordTest {
         assertTrue(node1.containsKey("node0"));
         Document node1_0 = (Document) node1.get("node0");
         assertTrue(node1_0.containsKey("fld6"));
+        // test field lists
+        List<String> fields = testRecord.listFields();
+        System.out.println(fields);
+        assertEquals(nFields, fields.size());
+        assertTrue(fields.contains("node1.node0.fld6"));
     }
 
 }

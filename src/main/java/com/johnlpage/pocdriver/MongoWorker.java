@@ -417,7 +417,7 @@ public class MongoWorker implements Runnable {
         int[] arr = new int[2];
         arr[0] = testOpts.arraytop;
         arr[1] = testOpts.arraynext;
-        return new TestRecord(testOpts.numFields, 0, testOpts.textFieldLen,
+        return new TestRecord(testOpts.numFields, testOpts.depth, testOpts.textFieldLen,
                 workerID, sequence++, testOpts.NUMBER_SIZE,
                 arr, testOpts.blobSize);
     }
