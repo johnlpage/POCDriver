@@ -167,3 +167,7 @@ Requirements to Build
   * mongo-java-driver-3.4.0.jar
 
 
+Troubleshooting
+---------------
+
+If you are running a mongod with `--auth` enabled, you must pass a user and password with read/write and replSetGetStatus privileges, e.g. `readWriteAnyDatabase` and `clusterMonitor` roles.  
