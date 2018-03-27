@@ -15,6 +15,7 @@ import org.apache.commons.cli.ParseException;
 public class POCTestOptions {
 	int batchSize = 512;
 	int numFields = 10;
+	int depth = 0;
 	final long NUMBER_SIZE = 1000000;
 	int textFieldLen = 30;
 	int numThreads = 4;
@@ -70,6 +71,7 @@ public class POCTestOptions {
 		cliopt.addOption("d","duration",true,"Test duration in seconds, default 18,000");
 		cliopt.addOption("e","empty",false,"Remove data from collection on startup");
 		cliopt.addOption("f","numfields",true,"Number of top level fields in test records (default 10)");
+		cliopt.addOption(null,"depth",true,"The depth of the document created (default 0)");
 		cliopt.addOption("g","arrayupdates",true,"Ratio of array increment ops requires option 'a' (default 0)");
 		cliopt.addOption("h","help",false,"Show Help");
 		cliopt.addOption("i","inserts",true,"Ratio of insert operations (default 100)");
@@ -247,6 +249,11 @@ public class POCTestOptions {
 		if(cmd.hasOption("f"))
 		{
 			numFields = Integer.parseInt(cmd.getOptionValue("f"));
+		}
+
+		if(cmd.hasOption("depth"))
+		{
+			depth = Integer.parseInt(cmd.getOptionValue("depth"));
 		}
 
 		if(cmd.hasOption("o"))
