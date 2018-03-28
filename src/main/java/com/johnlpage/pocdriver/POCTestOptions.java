@@ -78,11 +78,11 @@ public class POCTestOptions {
 		cliopt.addOption("j","workingset",true,"Percentage of database to be the working set (default 100)");
 		cliopt.addOption("k","keyqueries",true,"Ratio of key query operations (default 0)");
 		cliopt.addOption("l","textfieldsize",true,"Length of text fields in bytes (default 30)");
-		cliopt.addOption("m","findandmodify",false,"Use findandmodify instead of update and retireve record (with -u or -v only)");
+		cliopt.addOption("m","findandmodify",false,"Use findAndModify instead of update and retrieve record (with -u or -v only)");
 		cliopt.addOption("n","namespace",true,"Namespace to use , for example myDatabase.myCollection");
 		cliopt.addOption("o","logfile",true,"Output stats to  <file> ");
 		cliopt.addOption("p","print",false,"Print out a sample record according to the other parameters then quit");
-		cliopt.addOption("q","opsPerSecond",true,"Try to rate limit the total ops/s to the specified ammount");
+		cliopt.addOption("q","opsPerSecond",true,"Try to rate limit the total ops/s to the specified amount");
 		cliopt.addOption("r","rangequeries",true,"Ratio of range query operations (default 0)");
 		cliopt.addOption("s","slowthreshold",true,"Slow operation threshold in ms(default 50)");
 		cliopt.addOption("t","threads",true,"Number of threads (default 4)");

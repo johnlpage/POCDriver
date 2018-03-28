@@ -98,6 +98,7 @@ Record shape options
 -a add an X by Y array of integers to each record using -a X:Y
 -f aside from arrays and _id add f fields to the record, after the first 3 every third is an integer, every fifth a date, the rest are text.
 -l how many characters to have in the text fields
+--depth The depth of the document to create.
 ```
 
 Example
