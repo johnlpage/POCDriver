@@ -105,6 +105,11 @@ public class TestRecord {
 		return 1; // Text
 	}
 
+	TestRecord(POCTestOptions testOpts) {
+		this(testOpts.numFields, testOpts.depth, testOpts.textFieldLen, testOpts.workingset, 0,
+				testOpts.NUMBER_SIZE, new int[]{testOpts.arraytop, testOpts.arraynext}, testOpts.blobSize);
+	}
+
 	TestRecord(int nFields, int depth, int stringLength, int workerID, int sequence, long numberSize, int[] array, int binsize) {
 		internalDoc = new Document();
 		rng = new Random();
