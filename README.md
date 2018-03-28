@@ -73,6 +73,8 @@ Complex operations
      -v kiippu  Finds a record, adds two, then pops them off and updates the original one found.
  ```
  
+ Note: If you specify a workflow via the `-v` flag, the basic operations above will be ignored and the operations listed will be performed instead.
+ 
 Control options
 ---------------
 ```
