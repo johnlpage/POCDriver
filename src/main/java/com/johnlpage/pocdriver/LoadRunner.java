@@ -119,7 +119,7 @@ public class LoadRunner {
 
         PrepareSystem(testOpts, testResults);
         // Report on progress by looking at testResults
-        Runnable reporter = new POCTestReporter(testResults, mongoClient, testOpts);
+        POCTestReporter reporter = new POCTestReporter(testResults, mongoClient, testOpts);
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
         executor.scheduleAtFixedRate(reporter, 0, testOpts.reportTime, TimeUnit.SECONDS);
 
@@ -148,6 +148,9 @@ public class LoadRunner {
             System.out.println(e.getMessage());
 
         }
+
+        // do final report
+        reporter.finalReport();
     }
 
     LoadRunner(POCTestOptions testOpts) {
