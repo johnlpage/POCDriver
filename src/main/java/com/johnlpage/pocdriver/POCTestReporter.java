@@ -104,4 +104,31 @@ public class POCTestReporter implements Runnable {
         logData();
 
     }
+
+    /**
+     * Output a final summary
+     */
+    public void finalReport() {
+
+        Long insertsDone = testResults.GetOpsDone("inserts");
+
+        Long secondsElapsed = testResults.GetSecondsElapsed();
+
+        System.out.println("------------------------");
+        System.out.format("After %d seconds, %d new records inserted - collection has %d in total \n",
+                secondsElapsed, insertsDone, testResults.initialCount + insertsDone);
+
+        String[] opTypes = POCTestResults.opTypes;
+
+        for (String o : opTypes) {
+
+            Long opsDone = testResults.GetOpsDone(o);
+
+            System.out.format("%d %s per second on average", (int)(1f * opsDone / secondsElapsed), o);
+            System.out.println();
+
+        }
+        System.out.println();
+
+    }
 }

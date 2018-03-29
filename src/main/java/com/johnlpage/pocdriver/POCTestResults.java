@@ -7,6 +7,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 
 public class POCTestResults {
+
+    /**
+     * The time this LoadRunner started
+     */
     private Date startTime;
     private Date lastIntervalTime;
     long initialCount;
@@ -46,10 +50,6 @@ public class POCTestResults {
         lastIntervalTime = now;
 
         return rval;
-    }
-
-    public void SetStartTime(Date when) {
-        startTime = when;
     }
 
     public Long GetSecondsElapsed() {
