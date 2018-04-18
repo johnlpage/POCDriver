@@ -209,6 +209,10 @@ public class MongoWorker implements Runnable {
         Date starttime = new Date();
 
         //This is where ALL writes are happening
+        if (bulkWriter.size() == 0) {
+            System.out.println("No operations to bulk write");
+            return;
+        }
 
         //So this can fail part way through if we have a failover
         //In which case we resubmit it
@@ -261,7 +265,8 @@ public class MongoWorker implements Runnable {
                         System.out.println("Cannot find failed op in batch!");
                     }
                 } else {
-                    System.out.println(error);
+                    // Some other error occurred - possibly MongoCommandException, MongoTimeoutException
+                    System.out.println(e.getClass().getSimpleName() + ": " + error);
                 }
                 //System.out.println("No result returned");
                 submitted = false;
