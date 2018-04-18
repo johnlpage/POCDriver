@@ -1,5 +1,5 @@
 ***NOTE***
-Recently upgraded to MongoDB 3.4.0 Driver.
+Recently upgraded to MongoDB 3.6.x Driver.
 
 Introduction
 ------------
@@ -167,7 +167,7 @@ Requirements to Build
   * commons-codec-1.10.jar
   * gson-2.2.4.jar
   * loremipsum-1.0.jar (http://sourceforge.net/projects/loremipsum/files/)
-  * mongo-java-driver-3.4.0.jar
+  * mongo-java-driver-3.6.3.jar
 
 
 Troubleshooting
