@@ -21,6 +21,9 @@ public class POCTestReporter implements Runnable {
     private MongoClient mongoClient;
     private POCTestOptions testOpts;
 
+    private static final DateFormat DF_FULL = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private static final DateFormat DF_TIME = new SimpleDateFormat("HH:mm:ss");
+
     POCTestReporter(POCTestResults r, MongoClient mc, POCTestOptions t) {
         mongoClient = mc;
         testResults = r;
@@ -50,26 +53,24 @@ public class POCTestReporter implements Runnable {
             MongoCollection<Document> shards = configdb.getCollection("shards");
             testOpts.numShards = (int) shards.count();
         }
-        System.out.format("After %d seconds, %d new records inserted - collection has %d in total \n",
-                testResults.GetSecondsElapsed(), insertsDone, testResults.initialCount + insertsDone);
+        Date todaysdate = new Date();
+        System.out.format("After %d seconds (%s), %,d new records inserted - collection has %,d in total \n",
+                testResults.GetSecondsElapsed(), DF_TIME.format(todaysdate), insertsDone, testResults.initialCount + insertsDone);
 
         if (outfile != null) {
             outfile.format("%d,%d", testResults.GetSecondsElapsed(), insertsDone);
         }
-
 
         HashMap<String, Long> results = testResults
                 .GetOpsPerSecondLastInterval();
         String[] opTypes = POCTestResults.opTypes;
 
         for (String o : opTypes) {
-            System.out.format("%d %s per second since last report ",
+            System.out.format("%,d %s per second since last report ",
                     results.get(o), o);
 
             if (outfile != null) {
-                Date todaysdate = new Date();
-                DateFormat df2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                String str = df2.format(todaysdate);
+                String str = DF_FULL.format(todaysdate);
                 String mydate = str.replaceAll("\\s+", "T");
                 outfile.format("%s,%d,%d", mydate, testResults.GetSecondsElapsed(), insertsDone);
             }
