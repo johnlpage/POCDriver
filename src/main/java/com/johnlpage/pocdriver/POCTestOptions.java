@@ -47,6 +47,11 @@ public class POCTestOptions {
 	int updateFields=1;
 	int projectFields=0;
 
+	/**
+	 * Control whether we show full stacktraces on error
+	 */
+	boolean debug=false;
+
 	//Zipfian stuff
 	boolean zipfian = false;
 	int zipfsize = 0;
@@ -98,7 +103,8 @@ public class POCTestOptions {
 		cliopt.addOption(null,"rangedocs",true,"Number of documents to fetch for range queries (default 10)");
 		cliopt.addOption(null,"updatefields",true,"Number of fields to update (default 1)");
 		cliopt.addOption(null,"projectfields",true,"Number of fields to project in finds (default 0, which is no projection)");				
-		
+		cliopt.addOption(null,"debug",false,"Show more detail if exceptions occur during inserts/queries");
+
 		CommandLine cmd = parser.parse(cliopt, args);
 		
 
@@ -288,6 +294,11 @@ public class POCTestOptions {
 		if(cmd.hasOption("projectfields"))
 		{
 			projectFields = Integer.parseInt(cmd.getOptionValue("projectfields"));
+		}
+
+		if(cmd.hasOption("debug"))
+		{
+			debug = true;
 		}
 	}
 }

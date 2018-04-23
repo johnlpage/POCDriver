@@ -209,18 +209,13 @@ public class MongoWorker implements Runnable {
         Date starttime = new Date();
 
         //This is where ALL writes are happening
-        if (bulkWriter.size() == 0) {
-            System.out.println("No operations to bulk write");
-            return;
-        }
-
         //So this can fail part way through if we have a failover
         //In which case we resubmit it
 
         boolean submitted = false;
         BulkWriteResult bwResult = null;
 
-        while (!submitted) {
+        while (!submitted && !bulkWriter.isEmpty()) {  // can be empty if we removed a Dupe key error
             try {
                 submitted = true;
                 bwResult = coll.bulkWrite(bulkWriter);
@@ -267,6 +262,9 @@ public class MongoWorker implements Runnable {
                 } else {
                     // Some other error occurred - possibly MongoCommandException, MongoTimeoutException
                     System.out.println(e.getClass().getSimpleName() + ": " + error);
+                    // Print a full stacktrace since we're in debug mode
+                    if (testOpts.debug)
+                        e.printStackTrace();
                 }
                 //System.out.println("No result returned");
                 submitted = false;
@@ -544,7 +542,8 @@ public class MongoWorker implements Runnable {
 
         } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());
-            e.printStackTrace();
+            if (testOpts.debug)
+                e.printStackTrace();
         }
     }
 }
