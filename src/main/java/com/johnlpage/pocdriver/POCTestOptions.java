@@ -70,12 +70,12 @@ public class POCTestOptions {
 		
 		Options cliopt;
 		cliopt = new Options();
-		cliopt.addOption("a","arrays",true,"Shape of any arrays in new sample records x:y so -a 12:60 adds an array of 12 length 60 arrays of integers");
+		cliopt.addOption("a","arrays",true,"Shape of any arrays in new sample documents x:y so -a 12:60 adds an array of 12 length 60 arrays of integers");
 		cliopt.addOption("b","bulksize",true,"Bulk op size (default 512)");
-		cliopt.addOption("c","host",true,"Mongodb connection details (default 'mongodb://localhost:27017' )");
+		cliopt.addOption("c","host",true,"MongoDB connection details (default 'mongodb://localhost:27017' )");
 		cliopt.addOption("d","duration",true,"Test duration in seconds, default 18,000");
 		cliopt.addOption("e","empty",false,"Remove data from collection on startup");
-		cliopt.addOption("f","numfields",true,"Number of top level fields in test records (default 10)");
+		cliopt.addOption("f","numfields",true,"Number of top level fields in test documents (default 10)");
 		cliopt.addOption(null,"depth",true,"The depth of the document created (default 0)");
 		cliopt.addOption("g","arrayupdates",true,"Ratio of array increment ops requires option 'a' (default 0)");
 		cliopt.addOption("h","help",false,"Show Help");
@@ -83,10 +83,10 @@ public class POCTestOptions {
 		cliopt.addOption("j","workingset",true,"Percentage of database to be the working set (default 100)");
 		cliopt.addOption("k","keyqueries",true,"Ratio of key query operations (default 0)");
 		cliopt.addOption("l","textfieldsize",true,"Length of text fields in bytes (default 30)");
-		cliopt.addOption("m","findandmodify",false,"Use findAndModify instead of update and retrieve record (with -u or -v only)");
+		cliopt.addOption("m","findandmodify",false,"Use findAndModify instead of update and retrieve document (with -u or -v only)");
 		cliopt.addOption("n","namespace",true,"Namespace to use , for example myDatabase.myCollection");
 		cliopt.addOption("o","logfile",true,"Output stats to  <file> ");
-		cliopt.addOption("p","print",false,"Print out a sample record according to the other parameters then quit");
+		cliopt.addOption("p","print",false,"Print out a sample document according to the other parameters then quit");
 		cliopt.addOption("q","opsPerSecond",true,"Try to rate limit the total ops/s to the specified amount");
 		cliopt.addOption("r","rangequeries",true,"Ratio of range query operations (default 0)");
 		cliopt.addOption("s","slowthreshold",true,"Slow operation threshold in ms(default 50)");
@@ -99,7 +99,7 @@ public class POCTestOptions {
 		cliopt.addOption("z","zipfian",true,"Enable zipfian distribution over X number of documents (default 0)");
 		cliopt.addOption(null,"threadIdStart",true,"Start 'workerId' for each thread. 'w' value in _id. (default 0)");
 		cliopt.addOption(null,"fulltext",false,"Create fulltext index (default false)");
-		cliopt.addOption(null,"binary",true,"add a binary blob of size KB");
+		cliopt.addOption(null,"binary",true,"Add a binary blob of size KB");
 		cliopt.addOption(null,"rangedocs",true,"Number of documents to fetch for range queries (default 10)");
 		cliopt.addOption(null,"updatefields",true,"Number of fields to update (default 1)");
 		cliopt.addOption(null,"projectfields",true,"Number of fields to project in finds (default 0, which is no projection)");				
