@@ -29,7 +29,7 @@ Execute
 $ mvn clean package
 ```
 
-and you will find POCDriver.jar in bin folder.
+and you will find `POCDriver.jar` in `target` folder.
 
 
 
@@ -39,7 +39,7 @@ Basic usage
 If run with no arguments POCDriver will insert records onto a mongoDB running on localhost as quickly as possible. 
 There will be only the _id index and records will have 10 fields.
 
-Use --print to see what the records look like.
+Use `--print` to see what the records look like.
 
 Client options
 -------------
