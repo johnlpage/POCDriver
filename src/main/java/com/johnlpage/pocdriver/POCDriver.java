@@ -94,7 +94,7 @@ public class POCDriver {
         new DocumentCodec().encode(binaryWriter, tr.internalDoc, EncoderContext.builder().build());
         int length = binaryWriter.getBsonOutput().getSize();
 
-        System.out.println(String.format("Records are %.2f KB each as BSON", (float) length / 1024));
+        System.out.println(String.format("Documents are %.2f KB each as BSON", (float) length / 1024));
     }
 
 }

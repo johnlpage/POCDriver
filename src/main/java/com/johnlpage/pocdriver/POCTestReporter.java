@@ -54,7 +54,7 @@ public class POCTestReporter implements Runnable {
             testOpts.numShards = (int) shards.count();
         }
         Date todaysdate = new Date();
-        System.out.format("After %d seconds (%s), %,d new records inserted - collection has %,d in total \n",
+        System.out.format("After %d seconds (%s), %,d new documents inserted - collection has %,d in total \n",
                 testResults.GetSecondsElapsed(), DF_TIME.format(todaysdate), insertsDone, testResults.initialCount + insertsDone);
 
         if (outfile != null) {
@@ -116,7 +116,7 @@ public class POCTestReporter implements Runnable {
         Long secondsElapsed = testResults.GetSecondsElapsed();
 
         System.out.println("------------------------");
-        System.out.format("After %d seconds, %d new records inserted - collection has %d in total \n",
+        System.out.format("After %d seconds, %d new documents inserted - collection has %d in total \n",
                 secondsElapsed, insertsDone, testResults.initialCount + insertsDone);
 
         String[] opTypes = POCTestResults.opTypes;
