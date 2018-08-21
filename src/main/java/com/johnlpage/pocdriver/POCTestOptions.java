@@ -15,13 +15,13 @@ import org.apache.commons.cli.ParseException;
 public class POCTestOptions {
 	int batchSize = 512;
 	int numFields = 10;
+	int depth = 0;
 	final long NUMBER_SIZE = 1000000;
 	int textFieldLen = 30;
 	int numThreads = 4;
 	int threadIdStart = 0;
 	int reportTime = 10;
 	int slowThreshold = 50;
-	boolean logstats = false;
 	int insertops = 100;
 	int opsPerSecond = 0;
 	int keyqueries = 0;
@@ -33,7 +33,7 @@ public class POCTestOptions {
 	String logfile = null;
 	boolean sharded = false;
 	boolean singleserver = false;
-	String statsfile = "pocload.csv";
+	private String statsfile = "pocload.csv";
 	String databaseName = "POCDB";
 	String collectionName = "POCCOLL";
 	String workflow = null;
@@ -43,46 +43,51 @@ public class POCTestOptions {
 	int arraytop = 0;
 	int arraynext = 0;
 	int numcollections = 1;
+	int rangeDocs=10;
+	int updateFields=1;
+	int projectFields=0;
+
+	/**
+	 * Control whether we show full stacktraces on error
+	 */
+	boolean debug=false;
 
 	//Zipfian stuff
 	boolean zipfian = false;
 	int zipfsize = 0;
 
-    String username = null;
-    char[] password = null;
-    String authDatabase = null;
     int blobSize = 0;
 
 	boolean findandmodify=false;
 	int workingset = 100;
 	boolean helpOnly = false;
 	String connectionDetails = "mongodb://localhost:27017";
-	int multistage =0;
-    boolean fulltext;
+	boolean fulltext;
 	
-	public POCTestOptions(String[] args) throws ParseException
+	POCTestOptions(String[] args) throws ParseException
 	{
 		CommandLineParser parser = new DefaultParser();
 		
 		Options cliopt;
 		cliopt = new Options();
-		cliopt.addOption("a","arrays",true,"Shape of any arrays in new sample records x:y so -a 12:60 adds an array of 12 length 60 arrays of integers");
+		cliopt.addOption("a","arrays",true,"Shape of any arrays in new sample documents x:y so -a 12:60 adds an array of 12 length 60 arrays of integers");
 		cliopt.addOption("b","bulksize",true,"Bulk op size (default 512)");
-		cliopt.addOption("c","host",true,"Mongodb connection details (default 'mongodb://localhost:27017' )");
+		cliopt.addOption("c","host",true,"MongoDB connection details (default 'mongodb://localhost:27017' )");
 		cliopt.addOption("d","duration",true,"Test duration in seconds, default 18,000");
 		cliopt.addOption("e","empty",false,"Remove data from collection on startup");
-		cliopt.addOption("f","numfields",true,"Number of top level fields in test records (default 10)");
+		cliopt.addOption("f","numfields",true,"Number of top level fields in test documents (default 10)");
+		cliopt.addOption(null,"depth",true,"The depth of the document created (default 0)");
 		cliopt.addOption("g","arrayupdates",true,"Ratio of array increment ops requires option 'a' (default 0)");
 		cliopt.addOption("h","help",false,"Show Help");
 		cliopt.addOption("i","inserts",true,"Ratio of insert operations (default 100)");
 		cliopt.addOption("j","workingset",true,"Percentage of database to be the working set (default 100)");
 		cliopt.addOption("k","keyqueries",true,"Ratio of key query operations (default 0)");
 		cliopt.addOption("l","textfieldsize",true,"Length of text fields in bytes (default 30)");
-		cliopt.addOption("m","findandmodify",false,"Use findandmodify instead of update and retireve record (with -u or -v only)");
+		cliopt.addOption("m","findandmodify",false,"Use findAndModify instead of update and retrieve document (with -u or -v only)");
 		cliopt.addOption("n","namespace",true,"Namespace to use , for example myDatabase.myCollection");
 		cliopt.addOption("o","logfile",true,"Output stats to  <file> ");
-		cliopt.addOption("p","print",false,"Print out a sample record according to the other parameters then quit");
-		cliopt.addOption("q","opsPerSecond",true,"Try to rate limit the total ops/s to the specified ammount");
+		cliopt.addOption("p","print",false,"Print out a sample document according to the other parameters then quit");
+		cliopt.addOption("q","opsPerSecond",true,"Try to rate limit the total ops/s to the specified amount");
 		cliopt.addOption("r","rangequeries",true,"Ratio of range query operations (default 0)");
 		cliopt.addOption("s","slowthreshold",true,"Slow operation threshold in ms(default 50)");
 		cliopt.addOption("t","threads",true,"Number of threads (default 4)");
@@ -94,8 +99,12 @@ public class POCTestOptions {
 		cliopt.addOption("z","zipfian",true,"Enable zipfian distribution over X number of documents (default 0)");
 		cliopt.addOption(null,"threadIdStart",true,"Start 'workerId' for each thread. 'w' value in _id. (default 0)");
 		cliopt.addOption(null,"fulltext",false,"Create fulltext index (default false)");
-		cliopt.addOption(null,"binary",true,"add a binary blob of size KB");
-		
+		cliopt.addOption(null,"binary",true,"Add a binary blob of size KB");
+		cliopt.addOption(null,"rangedocs",true,"Number of documents to fetch for range queries (default 10)");
+		cliopt.addOption(null,"updatefields",true,"Number of fields to update (default 1)");
+		cliopt.addOption(null,"projectfields",true,"Number of fields to project in finds (default 0, which is no projection)");				
+		cliopt.addOption(null,"debug",false,"Show more detail if exceptions occur during inserts/queries");
+
 		CommandLine cmd = parser.parse(cliopt, args);
 		
 
@@ -144,8 +153,6 @@ public class POCTestOptions {
 			arraytop = Integer.parseInt(parts[0]);
 			arraynext = Integer.parseInt(parts[1]);
 		}
-		
-		
 		
 		if(cmd.hasOption("e"))
 		{
@@ -197,10 +204,10 @@ public class POCTestOptions {
 			singleserver=true;
 		}
 		if(cmd.hasOption("z"))
-                {
+		{
 			zipfian = true;
-                        zipfsize = Integer.parseInt(cmd.getOptionValue("z"));
-                }
+			zipfsize = Integer.parseInt(cmd.getOptionValue("z"));
+		}
 		
 		if(cmd.hasOption("o"))
 		{
@@ -250,10 +257,14 @@ public class POCTestOptions {
 			numFields = Integer.parseInt(cmd.getOptionValue("f"));
 		}
 
+		if(cmd.hasOption("depth"))
+		{
+			depth = Integer.parseInt(cmd.getOptionValue("depth"));
+		}
+
 		if(cmd.hasOption("o"))
 		{
 			statsfile = cmd.getOptionValue("o");
-			logstats = true;
 		}
 		
 		if(cmd.hasOption("t"))
@@ -269,6 +280,25 @@ public class POCTestOptions {
 		{
 			threadIdStart = Integer.parseInt(cmd.getOptionValue("threadIdStart"));
 		}
-		
+
+		if(cmd.hasOption("rangedocs"))
+		{
+			rangeDocs = Integer.parseInt(cmd.getOptionValue("rangedocs"));
+		}
+
+		if(cmd.hasOption("updatefields"))
+		{
+			updateFields = Integer.parseInt(cmd.getOptionValue("updatefields"));
+		}
+
+		if(cmd.hasOption("projectfields"))
+		{
+			projectFields = Integer.parseInt(cmd.getOptionValue("projectfields"));
+		}
+
+		if(cmd.hasOption("debug"))
+		{
+			debug = true;
+		}
 	}
 }
