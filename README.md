@@ -1,5 +1,5 @@
 ***NOTE***
-Recently upgraded to [MongoDB 3.6.x Java Driver](http://mongodb.github.io/mongo-java-driver/3.6/).
+Recently upgraded to [MongoDB 3.8.x Java Driver](http://mongodb.github.io/mongo-java-driver/3.8/).
 
 Introduction
 ------------
