@@ -31,7 +31,7 @@ Execute
 $ mvn clean package
 ```
 
-and you will find `POCDriver.jar` in `target` folder.
+and you will find `POCDriver.jar` in `bin` folder.
 
 
 
