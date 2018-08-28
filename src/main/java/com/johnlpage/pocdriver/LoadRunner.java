@@ -2,8 +2,9 @@ package com.johnlpage.pocdriver;
 
 
 import com.mongodb.BasicDBObject;
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientURI;
+import com.mongodb.ConnectionString;
+import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
@@ -156,7 +157,7 @@ public class LoadRunner {
     LoadRunner(POCTestOptions testOpts) {
         try {
             //For not authentication via connection string passing of user/pass only
-            mongoClient = new MongoClient(new MongoClientURI(testOpts.connectionDetails));
+            mongoClient = MongoClients.create(testOpts.connectionDetails);
         } catch (Exception e) {
 
             e.printStackTrace();
