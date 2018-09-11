@@ -28,7 +28,10 @@ public class POCTestOptions {
 	int arrayupdates = 0;
 	int updates = 0;
 	int rangequeries=0;
-	int duration = 18000;
+	int duration = 18000; // 5h 
+	long readOpLimit  = 0;
+	long insertOpLimit = 0;
+	long updateOpLimit = 0;
 	int numShards = 1;
 	String logfile = null;
 	boolean sharded = false;
@@ -71,9 +74,12 @@ public class POCTestOptions {
 		Options cliopt;
 		cliopt = new Options();
 		cliopt.addOption("a","arrays",true,"Shape of any arrays in new sample documents x:y so -a 12:60 adds an array of 12 length 60 arrays of integers");
-		cliopt.addOption("b","bulksize",true,"Bulk op size (default 512)");
+		cliopt.addOption("b","batchSize",true,"Bulk op size, if readDocs or insertDocs are set the min of the three values will be used (default 512)");
 		cliopt.addOption("c","host",true,"MongoDB connection details (default 'mongodb://localhost:27017' )");
 		cliopt.addOption("d","duration",true,"Test duration in seconds, default 18,000");
+		cliopt.addOption(null,"readOpLimit",true,"Limit of read documents for the test. This value overrides duration when applies. (default 0)");
+		cliopt.addOption(null,"insertOpLimit",true,"Limit of inserted documents for the test. This value overrides duration when applies. (default 0)");
+		cliopt.addOption(null,"updateOpLimit",true,"Limit of updated documents for the test. This value overrides duration when applies. (default 0)");
 		cliopt.addOption("e","empty",false,"Remove data from collection on startup");
 		cliopt.addOption("f","numfields",true,"Number of top level fields in test documents (default 10)");
 		cliopt.addOption(null,"depth",true,"The depth of the document created (default 0)");
@@ -178,7 +184,6 @@ public class POCTestOptions {
 		{
 			duration = Integer.parseInt(cmd.getOptionValue("d"));
 		}
-		
 		if(cmd.hasOption("g"))
 		{
 			arrayupdates = Integer.parseInt(cmd.getOptionValue("g"));
@@ -223,7 +228,18 @@ public class POCTestOptions {
 		{
 			batchSize = Integer.parseInt(cmd.getOptionValue("b"));
 		}
-		
+		if(cmd.hasOption("readOpLimit"))
+		{
+			readOpLimit = Long.parseLong(cmd.getOptionValue("readOpLimit"));
+		}
+		if(cmd.hasOption("insertOpLimit"))
+		{
+			insertOpLimit = Long.parseLong(cmd.getOptionValue("insertOpLimit"));
+		}
+		if(cmd.hasOption("updateOpLimit"))
+		{
+			updateOpLimit = Long.parseLong(cmd.getOptionValue("updateOpLimit"));
+		}
 		if(cmd.hasOption("s"))
 		{
 			slowThreshold = Integer.parseInt(cmd.getOptionValue("s"));

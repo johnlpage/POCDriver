@@ -8,6 +8,8 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.InsertOneModel;
 import com.mongodb.client.model.UpdateManyModel;
 import com.mongodb.client.model.WriteModel;
+import static java.lang.Math.toIntExact;
+
 import org.apache.commons.math3.distribution.ZipfDistribution;
 import org.bson.Document;
 
@@ -42,6 +44,11 @@ public class MongoWorker implements Runnable {
     private ArrayList<Document> keyStack;
     private int lastCollection;
     private int maxCollections;
+    private int readCount=0;
+    private int insertCount=0;
+    private int updateCount=0;
+    private long readOpLimit=0;
+
 
     private void ReviewShards() {
         //System.out.println("Reviewing chunk distribution");
@@ -286,6 +293,12 @@ public class MongoWorker implements Runnable {
             testResults.RecordSlowOp("updates", ucount);
         }
         testResults.RecordOpsDone("inserts", icount);
+        testResults.RecordOpsDone("updates", ucount);
+        //Increment the inserted docs counter
+        testResults.setInsertDocs(icount);
+        testResults.setInsertDocs(ucount);
+        insertCount+=icount;
+        updateCount+=ucount;
     }
 
 
@@ -324,6 +337,9 @@ public class MongoWorker implements Runnable {
                 testResults.RecordSlowOp("keyqueries", 1);
             }
             testResults.RecordOpsDone("keyqueries", 1);
+            //Increment the read docs counter
+            testResults.setReadDocs(1);
+            readCount+=1;
         }
         return myDoc;
     }
@@ -340,7 +356,9 @@ public class MongoWorker implements Runnable {
         Date starttime = new Date();
         MongoCursor<Document> cursor;
         if (testOpts.projectFields == 0) {
-            cursor = coll.find(query).limit(testOpts.rangeDocs).iterator();
+        	// If the read operations are limited apply the min limit for range queries.
+        	// This is the read operations limit minus the already executed read operations.
+            cursor = coll.find(query).limit(toIntExact(Long.min(testOpts.rangeDocs,(readOpLimit-readCount)))).iterator();
         } else {
             int numProjFields = (testOpts.projectFields <= testOpts.numFields) ? testOpts.projectFields : testOpts.numFields;
             int i = 0;
@@ -348,12 +366,17 @@ public class MongoWorker implements Runnable {
                 projFields.add("fld" + i);
                 i++;
             }
-            cursor = coll.find(query).projection(fields(include(projFields))).limit(testOpts.rangeDocs).iterator();
+        	// If the read operations are limited apply the min limit for range queries.
+        	// This is the read operations limit minus the already executed read operations.
+            cursor = coll.find(query).projection(fields(include(projFields))).limit(toIntExact(Long.min(testOpts.rangeDocs,(readOpLimit-readCount)))).iterator();
         }
         while (cursor.hasNext()) {
 
             @SuppressWarnings("unused")
             Document obj = cursor.next();
+            //Increment the read docs counter
+            testResults.setReadDocs(1);
+            readCount+=1;
         }
         cursor.close();
 
@@ -414,6 +437,9 @@ public class MongoWorker implements Runnable {
             this.coll.findOneAndUpdate(query, change); //These are immediate not batches
         }
         testResults.RecordOpsDone("updates", 1);
+        //Increment the inserted docs count.
+        testResults.setInsertDocs(1);
+        updateCount+=1;
     }
 
     private TestRecord createNewRecord() {
@@ -424,26 +450,92 @@ public class MongoWorker implements Runnable {
                 workerID, sequence++, testOpts.NUMBER_SIZE,
                 arr, testOpts.blobSize);
     }
-
+    //TODO ADD SESSION TO ENABLE TRANSACTIONS
     private TestRecord insertNewRecord(List<WriteModel<Document>> bulkWriter) {
         TestRecord tr = createNewRecord();
         bulkWriter.add(new InsertOneModel<Document>(tr.internalDoc));
         return tr;
     }
 
+    // The test completes when the durarion slapses or if there is a limit for inserted or 
+    // readed documents in this case the lower limit will end the test.
+    private Boolean isTestComplete() {
+    	Boolean result=false;
+        if(isOpLimit()) {
+    		result = (isReadOpLimit(readCount)|| isInsertOpLimit(insertCount)|| isUpdateOpLimit(updateCount))?true:false;
+    	} else {
+    		result = testResults.GetSecondsElapsed() > testOpts.duration;
+    	};
+    	   	    	
+    	return result;
+    }
+    
+    
+    private boolean isOpLimit() {
+    	return (testOpts.readOpLimit==0 && testOpts.insertOpLimit==0 && testOpts.updateOpLimit==0)?false:true;
+    }
+    
+    private boolean isInsertOpLimit(long count) {
+    	long result=0;
+    	if(testOpts.insertOpLimit!=0) {
+    		result = testOpts.insertOpLimit/testOpts.numThreads;
+        	if((workerID==0) && (testOpts.insertOpLimit%testOpts.numThreads!=0)){
+        		result+= testOpts.insertOpLimit%testOpts.numThreads;    		
+        	};
+    	};
+  
+    	return ((result>0)&&(result==count))?true:false;
+    }
+    private boolean isReadOpLimit(long count) {
+    	readOpLimit=0;
+    	if(testOpts.readOpLimit!=0) {
+    		readOpLimit+= testOpts.readOpLimit/testOpts.numThreads;
+          	if((workerID==0) && (testOpts.readOpLimit%testOpts.numThreads!=0)){
+          		readOpLimit+= testOpts.readOpLimit%testOpts.numThreads;    		
+        	};
+    	};
+  
+    	return ((readOpLimit>0)&&(readOpLimit==count))?true:false;
+    }
+    private boolean isUpdateOpLimit(long count) {
+    	long result = 0;
+    	if(testOpts.updateOpLimit!=0) {
+    		result+= testOpts.updateOpLimit/testOpts.numThreads;
+          	if((workerID==0) && (testOpts.updateOpLimit%testOpts.numThreads!=0)){
+        		result+= testOpts.updateOpLimit%testOpts.numThreads;    		
+        	};
+    	};  
+    	return ((result>0)&&(result==count))?true:false;
+    }
+    private boolean isWriteOpLimit(int batch) {
+    	long limit=0;
+    	if(testOpts.insertOpLimit!=0) {
+    		limit = testOpts.insertOpLimit/testOpts.numThreads;
+        	if((workerID==0) && (testOpts.insertOpLimit%testOpts.numThreads!=0)){
+        		limit+= testOpts.insertOpLimit%testOpts.numThreads;    		
+        	};
+    	};
+    	if(testOpts.updateOpLimit!=0) {
+    		limit+= testOpts.updateOpLimit/testOpts.numThreads;
+          	if((workerID==0) && (testOpts.updateOpLimit%testOpts.numThreads!=0)){
+        		limit+= testOpts.updateOpLimit%testOpts.numThreads;    		
+        	};
+    	};
+  
+    	return (testOpts.insertOpLimit!=0?insertCount:0)+(testOpts.updateOpLimit!=0?updateCount:0)+batch==limit?true:false;
+    }
 
     public void run() {
-        // Use a bulk inserter - even if ony for one
+        // Use a bulk inserter - even if only for one document
         List<WriteModel<Document>> bulkWriter;
 
         try {
             bulkWriter = new ArrayList<WriteModel<Document>>();
             int bulkops = 0;
 
-
             int c = 0;
             System.out.println("Worker thread " + workerID + " Started.");
-            while (testResults.GetSecondsElapsed() < testOpts.duration) {
+            while (!isTestComplete()) {
                 c++;
                 //Timer isn't granullar enough to sleep for each
                 if (testOpts.opsPerSecond > 0) {
@@ -460,17 +552,17 @@ public class MongoWorker implements Runnable {
                     }
                     Thread.sleep((int) Math.floor(sleeptimems));
                 }
+                
                 if (!workflowed) {
-                    // System.out.println("Random op");
-                    // Choose the type of op
-                    int allops = testOpts.insertops + testOpts.keyqueries
-                            + testOpts.updates + testOpts.rangequeries
-                            + testOpts.arrayupdates;
-                    int randop = getNextVal(allops);
-
+                // System.out.println("Random op");
+                // Choose the type of op
+                int allops = testOpts.insertops + testOpts.keyqueries
+                        + testOpts.updates + testOpts.rangequeries
+                        + testOpts.arrayupdates;
+                int randop = getNextVal(allops);
                     if (randop < testOpts.insertops) {
-                        insertNewRecord(bulkWriter);
-                        bulkops++;
+                    		insertNewRecord(bulkWriter);
+                    		bulkops++;
                     } else if (randop < testOpts.insertops
                             + testOpts.keyqueries) {
                         simpleKeyQuery();
@@ -526,7 +618,7 @@ public class MongoWorker implements Runnable {
                     }
                 }
 
-                if (c % testOpts.batchSize == 0) {
+                if ((c % testOpts.batchSize == 0) || isWriteOpLimit(bulkops)) {
                     if (bulkops > 0) {
                         flushBulkOps(bulkWriter);
                         bulkWriter.clear();

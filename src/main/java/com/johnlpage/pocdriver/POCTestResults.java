@@ -14,6 +14,8 @@ public class POCTestResults {
     private Date startTime;
     private Date lastIntervalTime;
     long initialCount;
+    int insertDocs=0;
+	int readDocs=0;
 
     public static String[] opTypes = {"inserts", "keyqueries", "updates", "rangequeries"};
     private ConcurrentHashMap<String, POCopStats> opStats;
@@ -93,5 +95,19 @@ public class POCTestResults {
         }
     }
 
+    public long getInsertDocs() {
+		return insertDocs;
+	}
 
+	public void setInsertDocs(long insertDocs) {
+		this.insertDocs += insertDocs;
+	}
+
+	public long getReadDocs() {
+		return readDocs;
+	}
+
+	public void setReadDocs(long readDocs) {
+		this.readDocs += readDocs;
+	}
 }
