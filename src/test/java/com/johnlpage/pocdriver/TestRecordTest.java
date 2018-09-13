@@ -74,5 +74,4 @@ public class TestRecordTest {
         assertEquals(nFields, fields.size());
         assertTrue(fields.contains("node1.node0.fld6"));
     }
-
 }
