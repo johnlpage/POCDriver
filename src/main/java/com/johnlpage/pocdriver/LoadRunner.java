@@ -11,6 +11,7 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.IndexOptions;
 import org.bson.Document;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -121,9 +122,7 @@ public class LoadRunner {
         PrepareSystem(testOpts, testResults);
         // Report on progress by looking at testResults
         POCTestReporter reporter = new POCTestReporter(testResults, mongoClient, testOpts);
-        ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-        executor.scheduleAtFixedRate(reporter, 0, testOpts.reportTime, TimeUnit.SECONDS);
-
+       
 
         // Using a thread pool we keep filled
         ExecutorService testexec = Executors
@@ -134,8 +133,19 @@ public class LoadRunner {
         // the 'workerID' for each set of threads.
         int threadIdStart = testOpts.threadIdStart;
         //System.out.println("threadIdStart="+threadIdStart);
+        ArrayList<MongoWorker> workforce = new ArrayList<MongoWorker>();
         for (int i = threadIdStart; i < (testOpts.numThreads + threadIdStart); i++) {
-            testexec.execute(new MongoWorker(mongoClient, testOpts, testResults, i));
+        	System.out.println("Creating worker "+ i);
+            workforce.add(new MongoWorker(mongoClient, testOpts, testResults, i));
+        }
+       
+        ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+        executor.scheduleAtFixedRate(reporter, 0, testOpts.reportTime, TimeUnit.SECONDS);
+
+        
+        for (MongoWorker w : workforce  )
+        {
+            testexec.execute(w);
         }
 
         testexec.shutdown();

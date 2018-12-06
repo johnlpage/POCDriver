@@ -44,6 +44,8 @@ public class MongoWorker implements Runnable {
     private int maxCollections;
 
     private void ReviewShards() {
+    	String primaryShard = null;
+    	
         //System.out.println("Reviewing chunk distribution");
         if (testOpts.sharded && !testOpts.singleserver) {
             // I'd like to pick a shard and write there - it's going to be
@@ -51,6 +53,14 @@ public class MongoWorker implements Runnable {
             // We can ensure we distribute our workers over out shards
             // So we will tell mongo that's where we want our records to go
             //System.out.println("Sharded and not a single server");
+        	
+        	//We also want to know which is the primary shard as we do not want
+        	//to be moving chinks to where they arready are
+        	
+        	Document dbinfo = mongoClient.getDatabase("config").getCollection("databases").find(new Document("_id",testOpts.databaseName)).first();
+        	
+            if(dbinfo != null) { primaryShard = dbinfo.getString("primary"); }
+        	
             MongoDatabase admindb = mongoClient.getDatabase("admin");
             Boolean split = false;
 
@@ -69,16 +79,19 @@ public class MongoWorker implements Runnable {
                     if (e.getMessage().contains("is a boundary key of existing")) {
                         split = true;
                     } else {
-                        if (!e.getMessage().contains("could not aquire collection lock"))
                             System.out.println(e.getMessage());
                         try {
                             Thread.sleep(1000);
                         } catch (Exception ignored) {
+                        	System.out.println(e.getMessage());
                         }
                     }
                 }
 
             }
+            
+            
+            
             // And move that to a shard - which shard? take my workerid and mod
             // it with the number of shards
             int shardno = workerID % testOpts.numShards;
@@ -87,15 +100,17 @@ public class MongoWorker implements Runnable {
             MongoCursor<Document> shardlist = mongoClient.getDatabase("config")
                     .getCollection("shards").find().skip(shardno).limit(1).iterator();
             //System.out.println("Getting shard name");
-            String shardName = "";
-            while (shardlist.hasNext()) {
-                Document obj = shardlist.next();
-
-                shardName = obj.getString("_id");
-                //System.out.println(shardName);
-            }
-
+            Document obj = mongoClient.getDatabase("config")
+                    .getCollection("shards").find().skip(shardno).first();
+            String shardName = obj.getString("_id");
+            
+           
             boolean move = false;
+            
+            if(primaryShard != null && primaryShard.equals(shardName)) {
+            	move = true; //No need to move if its already there and avoids the hang
+            	             //when you move somethign to a chunk which is donating
+            }
             while (!move) {
                 try {
                     admindb.runCommand(new Document("moveChunk",
@@ -103,18 +118,20 @@ public class MongoWorker implements Runnable {
                             .append("find",
                                     new Document("_id", new Document("w",
                                             workerID).append("i", sequence + 1)))
-                            .append("to", shardName));
+                            .append("to", shardName)
+                            .append("_secondaryThrottle", true)
+                            .append("_waitForDelete", true));
                     move = true;
                 } catch (Exception e) {
                     System.out.println(e.getMessage());
                     if (e.getMessage().contains("that chunk is already on that shard")) {
                         move = true;
                     } else {
-                        if (!e.getMessage().contains("could not aquire collection lock"))
                             System.out.println(e.getMessage());
                         try {
                             Thread.sleep(1000);
                         } catch (Exception ignored) {
+                        	System.out.println(e.getMessage());
                         }
                     }
                 }
