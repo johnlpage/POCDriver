@@ -297,12 +297,11 @@ public class MongoWorker implements Runnable {
         int ucount = bwResult.getMatchedCount();
 
         // If the bulk op is slow - ALL those ops were slow
-
-        if (taken > testOpts.slowThreshold) {
-            testResults.RecordSlowOp("inserts", icount);
-            testResults.RecordSlowOp("updates", ucount);
-        }
+        recordSlowOps("inserts", taken, icount);
+        recordSlowOps("updates",taken, ucount);
+        
         testResults.RecordOpsDone("inserts", icount);
+        
     }
 
 
@@ -337,9 +336,7 @@ public class MongoWorker implements Runnable {
 
             Date endtime = new Date();
             Long taken = endtime.getTime() - starttime.getTime();
-            if (taken > testOpts.slowThreshold) {
-                testResults.RecordSlowOp("keyqueries", 1);
-            }
+            recordSlowOps("keyquries", taken, 1);
             testResults.RecordOpsDone("keyqueries", 1);
         }
         return myDoc;
@@ -376,13 +373,20 @@ public class MongoWorker implements Runnable {
 
         Date endtime = new Date();
         Long taken = endtime.getTime() - starttime.getTime();
-        if (taken > testOpts.slowThreshold) {
-            testResults.RecordSlowOp("rangequeries", 1);
-        }
-        testResults.RecordOpsDone("rangequeries", 1);
-
+        recordSlowOps("rangequeries", taken, 1);
+        testResults.RecordOpsDone("rangequeries", 1);   
     }
 
+    private void recordSlowOps(String opname, Long taken, int count){
+        
+        for(int i=0; testOpts.slowThresholds !=null && testOpts.slowThresholds.length>i; i++){
+            int slowThreshold = testOpts.slowThresholds[i];
+            if (taken > slowThreshold) {
+                //testResults.RecordSlowOp("inserts", icount, 50);
+                testResults.RecordSlowOp(opname, count, i);
+            }            
+        }
+    }
     private void rotateCollection() {
         if (maxCollections > 1) {
             coll = colls.get(lastCollection);
@@ -558,6 +562,7 @@ public class MongoWorker implements Runnable {
             }
 
         } catch (Exception e) {
+            e.printStackTrace();
             System.out.println("Error: " + e.getMessage());
             if (testOpts.debug)
                 e.printStackTrace();
