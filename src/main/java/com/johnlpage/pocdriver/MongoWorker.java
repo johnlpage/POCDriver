@@ -561,8 +561,7 @@ public class MongoWorker implements Runnable {
 
             }
 
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (Exception e) {            
             System.out.println("Error: " + e.getMessage());
             if (testOpts.debug)
                 e.printStackTrace();
