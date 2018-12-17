@@ -79,20 +79,12 @@ public class POCTestResults {
         return os.totalOpsDone.get();
     }
 
-
-    // public Long GetSlowOps(String opType) {
-    //     POCopStats os = opStats.get(opType);
-    //     return os.slowOps.get();
-    // }
+    
     public Long GetSlowOps(String opType, int thresholdIndex) {
         POCopStats os = opStats.get(opType);
         return os.slowOps[thresholdIndex].get();
     }
 
-    // public void RecordSlowOp(String opType, int number) {
-    //     POCopStats os = opStats.get(opType);
-    //     os.slowOps.addAndGet(number);
-    // }
     public void RecordSlowOp(String opType, int number, int thresholdIndex) {
         POCopStats os = opStats.get(opType);        
         os.slowOps[thresholdIndex].addAndGet(number);

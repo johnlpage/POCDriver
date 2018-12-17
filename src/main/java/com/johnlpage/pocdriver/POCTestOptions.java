@@ -226,8 +226,7 @@ public class POCTestOptions {
 		}
 		
 		if(cmd.hasOption("s"))
-		{
-			//slowThreshold = Integer.parseInt(cmd.getOptionValue("s"));
+		{			
 			String[] strs = cmd.getOptionValue("s").split(",");
 			slowThresholds = new int[strs.length];
 			for(int i=0;i<strs.length;i++){
