@@ -88,6 +88,7 @@ public class POCTestResults {
     public void RecordSlowOp(String opType, int number, int thresholdIndex) {
         POCopStats os = opStats.get(opType);        
         os.slowOps[thresholdIndex].addAndGet(number);
+        
     }
 
     public void RecordOpsDone(String opType, int howmany) {
@@ -98,6 +99,4 @@ public class POCTestResults {
             os.totalOpsDone.addAndGet(howmany);
         }
     }
-
-
 }

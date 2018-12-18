@@ -20,9 +20,8 @@ public class POCTestOptions {
 	int textFieldLen = 30;
 	int numThreads = 4;
 	int threadIdStart = 0;
-	int reportTime = 10;
-	int slowThreshold = 50;
-	int[] slowThresholds = null;
+	int reportTime = 10;	
+	int[] slowThresholds = new int[]{50};  // default to 50
 	int insertops = 100;
 	int opsPerSecond = 0;
 	int keyqueries = 0;
@@ -232,7 +231,7 @@ public class POCTestOptions {
 			for(int i=0;i<strs.length;i++){
 				slowThresholds[i] = Integer.parseInt( strs[i]);
 			}			
-		}
+		}	
 		
 		// automatically generate the help statement
 		if(cmd.hasOption("h"))

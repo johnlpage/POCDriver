@@ -19,7 +19,7 @@ public class POCDriver {
 
         POCTestOptions testOpts;
         LogManager.getLogManager().reset();
-        System.out.println("MongoDB Proof Of Concept - Load Generator version 0.1.0");
+        System.out.println("MongoDB Proof Of Concept - Load Generator version 0.1.2");
         try {
             testOpts = new POCTestOptions(args);
             // Quit after displaying help message

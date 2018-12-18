@@ -336,7 +336,7 @@ public class MongoWorker implements Runnable {
 
             Date endtime = new Date();
             Long taken = endtime.getTime() - starttime.getTime();
-            recordSlowOps("keyquries", taken, 1);
+            recordSlowOps("keyqueries", taken, 1);
             testResults.RecordOpsDone("keyqueries", 1);
         }
         return myDoc;
