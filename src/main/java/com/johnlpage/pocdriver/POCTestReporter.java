@@ -96,7 +96,7 @@ public class POCTestReporter implements Runnable {
                 }
                 
             }
-
+            outfile.format(",");
             
             System.out.println();
 
