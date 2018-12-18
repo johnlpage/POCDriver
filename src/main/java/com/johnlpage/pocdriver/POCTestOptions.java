@@ -20,8 +20,8 @@ public class POCTestOptions {
 	int textFieldLen = 30;
 	int numThreads = 4;
 	int threadIdStart = 0;
-	int reportTime = 10;
-	int slowThreshold = 50;
+	int reportTime = 10;	
+	int[] slowThresholds = new int[]{50};  // default to 50
 	int insertops = 100;
 	int opsPerSecond = 0;
 	int keyqueries = 0;
@@ -89,7 +89,7 @@ public class POCTestOptions {
 		cliopt.addOption("p","print",false,"Print out a sample document according to the other parameters then quit");
 		cliopt.addOption("q","opsPerSecond",true,"Try to rate limit the total ops/s to the specified amount");
 		cliopt.addOption("r","rangequeries",true,"Ratio of range query operations (default 0)");
-		cliopt.addOption("s","slowthreshold",true,"Slow operation threshold in ms(default 50)");
+		cliopt.addOption("s","slowthreshold",true,"Slow operation threshold in ms, use comma to separate multiple thresholds(default 50)");
 		cliopt.addOption("t","threads",true,"Number of threads (default 4)");
 		cliopt.addOption("u","updates",true,"Ratio of update operations (default 0)");
 		cliopt.addOption("v","workflow",true,"Specify a set of ordered operations per thread from [iukp]");
@@ -225,9 +225,13 @@ public class POCTestOptions {
 		}
 		
 		if(cmd.hasOption("s"))
-		{
-			slowThreshold = Integer.parseInt(cmd.getOptionValue("s"));
-		}
+		{			
+			String[] strs = cmd.getOptionValue("s").split(",");
+			slowThresholds = new int[strs.length];
+			for(int i=0;i<strs.length;i++){
+				slowThresholds[i] = Integer.parseInt( strs[i]);
+			}			
+		}	
 		
 		// automatically generate the help statement
 		if(cmd.hasOption("h"))

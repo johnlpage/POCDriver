@@ -4,6 +4,7 @@ package com.johnlpage.pocdriver;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 
 public class POCTestResults {
@@ -19,13 +20,18 @@ public class POCTestResults {
     private ConcurrentHashMap<String, POCopStats> opStats;
 
 
-    POCTestResults() {
+    POCTestResults(POCTestOptions testOptions) {
         startTime = new Date();
         lastIntervalTime = new Date();
         opStats = new ConcurrentHashMap<String, POCopStats>();
 
         for (String s : opTypes) {
-            opStats.put(s, new POCopStats());
+            POCopStats stats = new POCopStats();
+            stats.slowOps = new AtomicLong[ testOptions.slowThresholds.length];            
+            for(int i =0; i< testOptions.slowThresholds.length; i++){
+                stats.slowOps[i] = new AtomicLong();
+            }
+            opStats.put(s, stats);
         }
     }
 
@@ -73,15 +79,16 @@ public class POCTestResults {
         return os.totalOpsDone.get();
     }
 
-
-    public Long GetSlowOps(String opType) {
+    
+    public Long GetSlowOps(String opType, int thresholdIndex) {
         POCopStats os = opStats.get(opType);
-        return os.slowOps.get();
+        return os.slowOps[thresholdIndex].get();
     }
 
-    public void RecordSlowOp(String opType, int number) {
-        POCopStats os = opStats.get(opType);
-        os.slowOps.addAndGet(number);
+    public void RecordSlowOp(String opType, int number, int thresholdIndex) {
+        POCopStats os = opStats.get(opType);        
+        os.slowOps[thresholdIndex].addAndGet(number);
+        
     }
 
     public void RecordOpsDone(String opType, int howmany) {
@@ -92,6 +99,4 @@ public class POCTestResults {
             os.totalOpsDone.addAndGet(howmany);
         }
     }
-
-
 }
