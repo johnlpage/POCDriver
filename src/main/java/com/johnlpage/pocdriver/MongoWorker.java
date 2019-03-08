@@ -72,7 +72,7 @@ public class MongoWorker implements Runnable {
                             testOpts.databaseName + "." + testOpts.collectionName)
                             .append("middle",
                                     new Document("_id", new Document("w",
-                                            workerID).append("i", sequence + 1))));
+                                            workerID+1).append("i", sequence + 1))));
                     split = true;
                 } catch (Exception e) {
 
@@ -117,7 +117,7 @@ public class MongoWorker implements Runnable {
                             testOpts.databaseName + "." + testOpts.collectionName)
                             .append("find",
                                     new Document("_id", new Document("w",
-                                            workerID).append("i", sequence + 1)))
+                                            workerID+1).append("i", sequence + 1)))
                             .append("to", shardName)
                             .append("_secondaryThrottle", true)
                             .append("_waitForDelete", true));
