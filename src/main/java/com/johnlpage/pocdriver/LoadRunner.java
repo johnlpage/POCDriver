@@ -9,6 +9,9 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.IndexOptions;
+import com.mongodb.client.model.UpdateOptions;
+import com.mongodb.client.result.UpdateResult;
+
 import org.bson.Document;
 
 import java.util.ArrayList;
@@ -79,10 +82,11 @@ public class LoadRunner {
             //Turn the auto balancer off - good code rarely needs it running constantly
             MongoDatabase configdb = mongoClient.getDatabase("config");
             MongoCollection<Document> settings = configdb.getCollection("settings");
-            settings.updateOne(eq("_id", "balancer"), new Document("$set", new Document("stopped", true)));
+            UpdateResult rval = settings.updateOne(eq("_id", "balancer"), new Document("$set", new Document("stopped", true)),new UpdateOptions().upsert(true));
+            //System.out.println(rval.toString());
             //System.out.println("Balancer disabled");
             try {
-                //System.out.println("Enabling Sharding on Database");
+              //  System.out.println("Enabling Sharding on Database");
                 admindb.runCommand(new Document("enableSharding", testOpts.databaseName));
             } catch (Exception e) {
                 if (!e.getMessage().contains("already enabled"))

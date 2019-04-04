@@ -54,9 +54,7 @@ public class MongoWorker implements Runnable {
             // So we will tell mongo that's where we want our records to go
             //System.out.println("Sharded and not a single server");
         	
-        	//We also want to know which is the primary shard as we do not want
-        	//to be moving chinks to where they arready are
-        	
+
         	Document dbinfo = mongoClient.getDatabase("config").getCollection("databases").find(new Document("_id",testOpts.databaseName)).first();
         	
             if(dbinfo != null) { primaryShard = dbinfo.getString("primary"); }
@@ -67,12 +65,12 @@ public class MongoWorker implements Runnable {
             while (!split) {
 
                 try {
-                    //		System.out.println("Splitting a chunk");
+                    //System.out.println("Splitting a chunk for worker " + workerID);
                     admindb.runCommand(new Document("split",
                             testOpts.databaseName + "." + testOpts.collectionName)
                             .append("middle",
                                     new Document("_id", new Document("w",
-                                            workerID+1).append("i", sequence + 1))));
+                                            workerID).append("i", sequence + 1))));
                     split = true;
                 } catch (Exception e) {
 
@@ -81,6 +79,7 @@ public class MongoWorker implements Runnable {
                     } else {
                             System.out.println(e.getMessage());
                         try {
+                        	//System.out.println("Sleeping before trying again");
                             Thread.sleep(1000);
                         } catch (Exception ignored) {
                         	System.out.println(e.getMessage());
@@ -107,28 +106,26 @@ public class MongoWorker implements Runnable {
            
             boolean move = false;
             
-            if(primaryShard != null && primaryShard.equals(shardName)) {
-            	move = true; //No need to move if its already there and avoids the hang
-            	             //when you move somethign to a chunk which is donating
-            }
             while (!move) {
                 try {
+                	//System.out.println("Moving chunk for worker " + workerID + " to " + shardName);
                     admindb.runCommand(new Document("moveChunk",
                             testOpts.databaseName + "." + testOpts.collectionName)
                             .append("find",
                                     new Document("_id", new Document("w",
-                                            workerID+1).append("i", sequence + 1)))
+                                            workerID).append("i", sequence + 1)))
                             .append("to", shardName)
                             .append("_secondaryThrottle", true)
                             .append("_waitForDelete", true));
                     move = true;
                 } catch (Exception e) {
-                    System.out.println(e.getMessage());
+                  
                     if (e.getMessage().contains("that chunk is already on that shard")) {
                         move = true;
                     } else {
                             System.out.println(e.getMessage());
                         try {
+                        	//System.out.println("Sleeping before trying again");
                             Thread.sleep(1000);
                         } catch (Exception ignored) {
                         	System.out.println(e.getMessage());
