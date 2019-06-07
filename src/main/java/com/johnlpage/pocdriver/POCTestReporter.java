@@ -75,20 +75,29 @@ public class POCTestReporter implements Runnable {
             }
 
             Long opsDone = testResults.GetOpsDone(o);
-            if (opsDone > 0) {
-                Double fastops = 100 - (testResults.GetSlowOps(o) * 100.0)
-                        / opsDone;
-                System.out.format("%.2f %% in under %d milliseconds", fastops,
-                        testOpts.slowThreshold);
-                if (outfile != null) {
-                    outfile.format(",%.2f", fastops);
+
+            for(int i=0;i< testOpts.slowThresholds.length;i++){
+                int slowThreshold  =  testOpts.slowThresholds[i];
+                if (opsDone > 0) {
+                    Double fastops = 100 - (testResults.GetSlowOps(o, i) * 100.0)
+                            / opsDone;
+                    System.out.println();
+                    System.out.format("\t%.2f %% in under %d milliseconds", fastops,
+                            slowThreshold);
+                    if (outfile != null) {
+                        outfile.format(",%.2f", fastops);
+                    }
+                } else {
+                    System.out.println();
+                    System.out.format("\t%.2f %% in under %d milliseconds", (float) 100, slowThreshold);
+                    if (outfile != null) {
+                        outfile.format(",%d", 100);
+                    }
                 }
-            } else {
-                System.out.format("%.2f %% in under %d milliseconds", (float) 100, testOpts.slowThreshold);
-                if (outfile != null) {
-                    outfile.format(",%d", 100);
-                }
+                
             }
+            if(outfile != null) outfile.format(",");
+            
             System.out.println();
 
         }

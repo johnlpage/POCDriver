@@ -1,5 +1,5 @@
 ***NOTE***
-Recently upgraded to [MongoDB 3.6.x Java Driver](http://mongodb.github.io/mongo-java-driver/3.6/).
+Recently upgraded to [MongoDB 3.8.x Java Driver](http://mongodb.github.io/mongo-java-driver/3.8/).
 
 Introduction
 ------------
@@ -174,7 +174,7 @@ Requirements to Build
   * commons-codec-1.10.jar
   * gson-2.2.4.jar
   * loremipsum-1.0.jar (http://sourceforge.net/projects/loremipsum/files/)
-  * mongo-java-driver-3.6.3.jar
+  * mongo-driver-sync-3.8.1.jar
 
 
 Troubleshooting

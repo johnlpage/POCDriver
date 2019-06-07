@@ -9,8 +9,12 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.IndexOptions;
+import com.mongodb.client.model.UpdateOptions;
+import com.mongodb.client.result.UpdateResult;
+
 import org.bson.Document;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -78,10 +82,11 @@ public class LoadRunner {
             //Turn the auto balancer off - good code rarely needs it running constantly
             MongoDatabase configdb = mongoClient.getDatabase("config");
             MongoCollection<Document> settings = configdb.getCollection("settings");
-            settings.updateOne(eq("_id", "balancer"), new Document("$set", new Document("stopped", true)));
+            UpdateResult rval = settings.updateOne(eq("_id", "balancer"), new Document("$set", new Document("stopped", true)),new UpdateOptions().upsert(true));
+            //System.out.println(rval.toString());
             //System.out.println("Balancer disabled");
             try {
-                //System.out.println("Enabling Sharding on Database");
+              //  System.out.println("Enabling Sharding on Database");
                 admindb.runCommand(new Document("enableSharding", testOpts.databaseName));
             } catch (Exception e) {
                 if (!e.getMessage().contains("already enabled"))
@@ -121,9 +126,7 @@ public class LoadRunner {
         PrepareSystem(testOpts, testResults);
         // Report on progress by looking at testResults
         POCTestReporter reporter = new POCTestReporter(testResults, mongoClient, testOpts);
-        ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-        executor.scheduleAtFixedRate(reporter, 0, testOpts.reportTime, TimeUnit.SECONDS);
-
+       
 
         // Using a thread pool we keep filled
         ExecutorService testexec = Executors
@@ -134,8 +137,19 @@ public class LoadRunner {
         // the 'workerID' for each set of threads.
         int threadIdStart = testOpts.threadIdStart;
         //System.out.println("threadIdStart="+threadIdStart);
+        ArrayList<MongoWorker> workforce = new ArrayList<MongoWorker>();
         for (int i = threadIdStart; i < (testOpts.numThreads + threadIdStart); i++) {
-            testexec.execute(new MongoWorker(mongoClient, testOpts, testResults, i));
+        	System.out.println("Creating worker "+ i);
+            workforce.add(new MongoWorker(mongoClient, testOpts, testResults, i));
+        }
+       
+        ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+        executor.scheduleAtFixedRate(reporter, 0, testOpts.reportTime, TimeUnit.SECONDS);
+
+        
+        for (MongoWorker w : workforce  )
+        {
+            testexec.execute(w);
         }
 
         testexec.shutdown();
