@@ -115,7 +115,7 @@ public class POCTestReporter implements Runnable {
         Long secondsElapsed = testResults.GetSecondsElapsed();
 
         System.out.println("------------------------");
-        System.out.println("Write operations: "+testResults.getInsertDocs()+" - Read operations: "+testResults.getReadDocs());
+        System.out.println("Insert operations: "+testResults.getInsertDocs()+" - Update Operations: "+testResults.getUpdateDocs() +" - Read operations: "+testResults.getReadDocs());
         System.out.format("After %d seconds, %d new documents inserted - collection has %d in total \n",
                 secondsElapsed, insertsDone, testResults.initialCount + insertsDone);
 

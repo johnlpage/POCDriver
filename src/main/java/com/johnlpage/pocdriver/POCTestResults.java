@@ -1,10 +1,8 @@
 package com.johnlpage.pocdriver;
 
-
 import java.util.Date;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
-
 
 public class POCTestResults {
 
@@ -14,12 +12,12 @@ public class POCTestResults {
     private Date startTime;
     private Date lastIntervalTime;
     long initialCount;
-    int insertDocs=0;
-	int readDocs=0;
+    private int insertDocs = 0;
+    private int updateDocs = 0;
+    private int readDocs = 0;
 
-    public static String[] opTypes = {"inserts", "keyqueries", "updates", "rangequeries"};
+    public static String[] opTypes = { "inserts", "keyqueries", "updates", "rangequeries" };
     private ConcurrentHashMap<String, POCopStats> opStats;
-
 
     POCTestResults() {
         startTime = new Date();
@@ -31,8 +29,8 @@ public class POCTestResults {
         }
     }
 
-    //This returns inserts per second since we last called it
-    //Rather than us keeping an overall figure
+    // This returns inserts per second since we last called it
+    // Rather than us keeping an overall figure
 
     HashMap<String, Long> GetOpsPerSecondLastInterval() {
 
@@ -59,7 +57,6 @@ public class POCTestResults {
         return (now.getTime() - startTime.getTime()) / 1000;
     }
 
-
     private Long GetPrevOpsDone(String opType) {
         POCopStats os = opStats.get(opType);
         return os.intervalCount.get();
@@ -74,7 +71,6 @@ public class POCTestResults {
         POCopStats os = opStats.get(opType);
         return os.totalOpsDone.get();
     }
-
 
     public Long GetSlowOps(String opType) {
         POCopStats os = opStats.get(opType);
@@ -96,18 +92,26 @@ public class POCTestResults {
     }
 
     public long getInsertDocs() {
-		return insertDocs;
-	}
+        return insertDocs;
+    }
 
-	public void setInsertDocs(long insertDocs) {
-		this.insertDocs += insertDocs;
-	}
+    public void setInsertDocs(long insertDocs) {
+        this.insertDocs += insertDocs;
+    }
 
-	public long getReadDocs() {
-		return readDocs;
-	}
+    public long getReadDocs() {
+        return readDocs;
+    }
 
-	public void setReadDocs(long readDocs) {
-		this.readDocs += readDocs;
-	}
+    public void setReadDocs(long readDocs) {
+        this.readDocs += readDocs;
+    }
+
+    public int getUpdateDocs() {
+        return updateDocs;
+    }
+
+    public void setUpdateDocs(int updateDocs) {
+        this.updateDocs += updateDocs;
+    }
 }

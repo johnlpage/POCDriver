@@ -21,7 +21,7 @@ public class POCDriverTest {
     @Test
     public void testReadOpLimit() {
     	POCDriver classUnserTest = new POCDriver();
-    	classUnserTest.main(new String[] {"-readOpLimit", "10001","-i","0","-k","100"});    	
+    	classUnserTest.main(new String[] {"-readOpLimit", "10001","-i","0","-r","100"});    	
     }
     
     @Test

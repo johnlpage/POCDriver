@@ -44,32 +44,29 @@ public class MongoWorker implements Runnable {
     private ArrayList<Document> keyStack;
     private int lastCollection;
     private int maxCollections;
-    private int readCount=0;
-    private int insertCount=0;
-    private int updateCount=0;
-    private long readOpLimit=0;
-
+    private int readCount = 0;
+    private int insertCount = 0;
+    private int updateCount = 0;
+    private long readOpLimit = 0;
 
     private void ReviewShards() {
-        //System.out.println("Reviewing chunk distribution");
+        // System.out.println("Reviewing chunk distribution");
         if (testOpts.sharded && !testOpts.singleserver) {
             // I'd like to pick a shard and write there - it's going to be
             // faster and
             // We can ensure we distribute our workers over out shards
             // So we will tell mongo that's where we want our records to go
-            //System.out.println("Sharded and not a single server");
+            // System.out.println("Sharded and not a single server");
             MongoDatabase admindb = mongoClient.getDatabase("admin");
             Boolean split = false;
 
             while (!split) {
 
                 try {
-                    //		System.out.println("Splitting a chunk");
-                    admindb.runCommand(new Document("split",
-                            testOpts.databaseName + "." + testOpts.collectionName)
+                    // System.out.println("Splitting a chunk");
+                    admindb.runCommand(new Document("split", testOpts.databaseName + "." + testOpts.collectionName)
                             .append("middle",
-                                    new Document("_id", new Document("w",
-                                            workerID).append("i", sequence + 1))));
+                                    new Document("_id", new Document("w", workerID).append("i", sequence + 1))));
                     split = true;
                 } catch (Exception e) {
 
@@ -91,25 +88,22 @@ public class MongoWorker implements Runnable {
             int shardno = workerID % testOpts.numShards;
             // Get the name of the shard
 
-            MongoCursor<Document> shardlist = mongoClient.getDatabase("config")
-                    .getCollection("shards").find().skip(shardno).limit(1).iterator();
-            //System.out.println("Getting shard name");
+            MongoCursor<Document> shardlist = mongoClient.getDatabase("config").getCollection("shards").find()
+                    .skip(shardno).limit(1).iterator();
+            // System.out.println("Getting shard name");
             String shardName = "";
             while (shardlist.hasNext()) {
                 Document obj = shardlist.next();
 
                 shardName = obj.getString("_id");
-                //System.out.println(shardName);
+                // System.out.println(shardName);
             }
 
             boolean move = false;
             while (!move) {
                 try {
-                    admindb.runCommand(new Document("moveChunk",
-                            testOpts.databaseName + "." + testOpts.collectionName)
-                            .append("find",
-                                    new Document("_id", new Document("w",
-                                            workerID).append("i", sequence + 1)))
+                    admindb.runCommand(new Document("moveChunk", testOpts.databaseName + "." + testOpts.collectionName)
+                            .append("find", new Document("_id", new Document("w", workerID).append("i", sequence + 1)))
                             .append("to", shardName));
                     move = true;
                 } catch (Exception e) {
@@ -126,11 +120,10 @@ public class MongoWorker implements Runnable {
                     }
                 }
 
-
             }
 
-            //System.out.println("Moved {w:" + workerID + ",i:" + (sequence + 1)
-            //		+ "} to " + shardName);
+            // System.out.println("Moved {w:" + workerID + ",i:" + (sequence + 1)
+            // + "} to " + shardName);
             numShards = testOpts.numShards;
         }
     }
@@ -138,7 +131,7 @@ public class MongoWorker implements Runnable {
     MongoWorker(MongoClient c, POCTestOptions t, POCTestResults r, int id) {
         mongoClient = c;
 
-        //Ping
+        // Ping
         c.getDatabase("admin").runCommand(new Document("ping", 1));
         testOpts = t;
         testResults = r;
@@ -191,16 +184,13 @@ public class MongoWorker implements Runnable {
         rotateCollection();
         Document query = new Document();
 
-        //TODO Refactor the query for 3.0 driver
-        Document limits = new Document("$gt", new Document("w",
-                workerID));
+        // TODO Refactor the query for 3.0 driver
+        Document limits = new Document("$gt", new Document("w", workerID));
         limits.append("$lt", new Document("w", workerID + 1));
 
         query.append("_id", limits);
 
-        Document myDoc = coll.find(query).projection(include("_id"))
-                .sort(descending("_id"))
-                .first();
+        Document myDoc = coll.find(query).projection(include("_id")).sort(descending("_id")).first();
         if (myDoc != null) {
             Document id = (Document) myDoc.get("_id");
             rval = id.getInteger("i") + 1;
@@ -208,44 +198,43 @@ public class MongoWorker implements Runnable {
         return rval;
     }
 
-    //This one was a major rewrite as the whole Bulk Ops API changed in 3.0
+    // This one was a major rewrite as the whole Bulk Ops API changed in 3.0
 
     private void flushBulkOps(List<WriteModel<Document>> bulkWriter) {
         // Time this.
         rotateCollection();
         Date starttime = new Date();
 
-        //This is where ALL writes are happening
-        //So this can fail part way through if we have a failover
-        //In which case we resubmit it
+        // This is where ALL writes are happening
+        // So this can fail part way through if we have a failover
+        // In which case we resubmit it
 
         boolean submitted = false;
         BulkWriteResult bwResult = null;
 
-        while (!submitted && !bulkWriter.isEmpty()) {  // can be empty if we removed a Dupe key error
+        while (!submitted && !bulkWriter.isEmpty()) { // can be empty if we removed a Dupe key error
             try {
                 submitted = true;
                 bwResult = coll.bulkWrite(bulkWriter);
             } catch (Exception e) {
-                //We had a problem with this bulk op - some may be completed, some may not
+                // We had a problem with this bulk op - some may be completed, some may not
 
-                //I need to resubmit it here
+                // I need to resubmit it here
                 String error = e.getMessage();
 
-
-                //Check if it's a sup key and remove it
+                // Check if it's a sup key and remove it
                 Pattern p = Pattern.compile("dup key: \\{ : \\{ w: (.*?), i: (.*?) }");
-                //	Pattern p = Pattern.compile("dup key");
+                // Pattern p = Pattern.compile("dup key");
 
                 Matcher m = p.matcher(error);
                 if (m.find()) {
-                    //System.out.println("Duplicate Key");
-                    //int thread = Integer.parseInt(m.group(1));
+                    // System.out.println("Duplicate Key");
+                    // int thread = Integer.parseInt(m.group(1));
                     int uniqid = Integer.parseInt(m.group(2));
-                    //System.out.println(" ID = " + thread + " " + uniqid );
+                    // System.out.println(" ID = " + thread + " " + uniqid );
                     boolean found = false;
-                    for (Iterator<? super WriteModel<Document>> iter = bulkWriter.listIterator(); iter.hasNext(); ) {
-                        //Check if it's a InsertOneModel
+                    for (Iterator<? super WriteModel<Document>> iter = bulkWriter.listIterator(); iter.hasNext();) {
+                        // Check if it's a InsertOneModel
 
                         Object o = iter.next();
                         if (o instanceof InsertOneModel<?>) {
@@ -253,11 +242,13 @@ public class MongoWorker implements Runnable {
                             InsertOneModel<Document> a = (InsertOneModel<Document>) o;
                             Document id = (Document) a.getDocument().get("_id");
 
-                            //int opthread=id.getInteger("w");
-                            //int opid = id.getInteger("i");
-                            //System.out.println("opthread: " + opthread + "=" + thread + " opid: " + opid + "=" + uniqid);
+                            // int opthread=id.getInteger("w");
+                            // int opid = id.getInteger("i");
+                            // System.out.println("opthread: " + opthread + "=" + thread + " opid: " + opid
+                            // + "=" + uniqid);
                             if (id.getInteger("i") == uniqid) {
-                                //System.out.println(" Removing " + thread + " " + uniqid + " from bulkop as already inserted");
+                                // System.out.println(" Removing " + thread + " " + uniqid + " from bulkop as
+                                // already inserted");
                                 iter.remove();
                                 found = true;
                             }
@@ -267,13 +258,14 @@ public class MongoWorker implements Runnable {
                         System.out.println("Cannot find failed op in batch!");
                     }
                 } else {
-                    // Some other error occurred - possibly MongoCommandException, MongoTimeoutException
+                    // Some other error occurred - possibly MongoCommandException,
+                    // MongoTimeoutException
                     System.out.println(e.getClass().getSimpleName() + ": " + error);
                     // Print a full stacktrace since we're in debug mode
                     if (testOpts.debug)
                         e.printStackTrace();
                 }
-                //System.out.println("No result returned");
+                // System.out.println("No result returned");
                 submitted = false;
             }
         }
@@ -281,7 +273,6 @@ public class MongoWorker implements Runnable {
         Date endtime = new Date();
 
         Long taken = endtime.getTime() - starttime.getTime();
-
 
         int icount = bwResult.getInsertedCount();
         int ucount = bwResult.getMatchedCount();
@@ -294,13 +285,12 @@ public class MongoWorker implements Runnable {
         }
         testResults.RecordOpsDone("inserts", icount);
         testResults.RecordOpsDone("updates", ucount);
-        //Increment the inserted docs counter
+        // Increment the inserted docs counter
         testResults.setInsertDocs(icount);
-        testResults.setInsertDocs(ucount);
-        insertCount+=icount;
-        updateCount+=ucount;
+        testResults.setUpdateDocs(ucount);
+        insertCount += icount;
+        updateCount += ucount;
     }
-
 
     private Document simpleKeyQuery() {
         // Key Query
@@ -311,8 +301,7 @@ public class MongoWorker implements Runnable {
 
         int recordno = rest + getNextVal(range);
 
-        query.append("_id",
-                new Document("w", workerID).append("i", recordno));
+        query.append("_id", new Document("w", workerID).append("i", recordno));
         Date starttime = new Date();
         Document myDoc;
         List<String> projFields = new ArrayList<String>(testOpts.numFields);
@@ -320,7 +309,8 @@ public class MongoWorker implements Runnable {
         if (testOpts.projectFields == 0) {
             myDoc = coll.find(query).first();
         } else {
-            int numProjFields = (testOpts.projectFields <= testOpts.numFields) ? testOpts.projectFields : testOpts.numFields;
+            int numProjFields = (testOpts.projectFields <= testOpts.numFields) ? testOpts.projectFields
+                    : testOpts.numFields;
             int i = 0;
             while (i < numProjFields) {
                 projFields.add("fld" + i);
@@ -337,13 +327,12 @@ public class MongoWorker implements Runnable {
                 testResults.RecordSlowOp("keyqueries", 1);
             }
             testResults.RecordOpsDone("keyqueries", 1);
-            //Increment the read docs counter
+            // Increment the read docs counter
             testResults.setReadDocs(1);
-            readCount+=1;
+            readCount += 1;
         }
         return myDoc;
     }
-
 
     private void rangeQuery() {
         // Key Query
@@ -351,32 +340,34 @@ public class MongoWorker implements Runnable {
         Document query = new Document();
         List<String> projFields = new ArrayList<String>(testOpts.numFields);
         int recordno = getNextVal(sequence);
-        query.append("_id", new Document("$gt", new Document("w",
-                workerID).append("i", recordno)));
+        query.append("_id", new Document("$gt", new Document("w", workerID).append("i", recordno)));
         Date starttime = new Date();
         MongoCursor<Document> cursor;
         if (testOpts.projectFields == 0) {
-        	// If the read operations are limited apply the min limit for range queries.
-        	// This is the read operations limit minus the already executed read operations.
-            cursor = coll.find(query).limit(toIntExact(Long.min(testOpts.rangeDocs,(readOpLimit-readCount)))).iterator();
+            // If the read operations are limited apply the min limit for range queries.
+            // This is the read operations limit minus the already executed read operations.
+            cursor = coll.find(query).limit(toIntExact(Long.min(testOpts.rangeDocs, (readOpLimit - readCount))))
+                    .iterator();
         } else {
-            int numProjFields = (testOpts.projectFields <= testOpts.numFields) ? testOpts.projectFields : testOpts.numFields;
+            int numProjFields = (testOpts.projectFields <= testOpts.numFields) ? testOpts.projectFields
+                    : testOpts.numFields;
             int i = 0;
             while (i < numProjFields) {
                 projFields.add("fld" + i);
                 i++;
             }
-        	// If the read operations are limited apply the min limit for range queries.
-        	// This is the read operations limit minus the already executed read operations.
-            cursor = coll.find(query).projection(fields(include(projFields))).limit(toIntExact(Long.min(testOpts.rangeDocs,(readOpLimit-readCount)))).iterator();
+            // If the read operations are limited apply the min limit for range queries.
+            // This is the read operations limit minus the already executed read operations.
+            cursor = coll.find(query).projection(fields(include(projFields)))
+                    .limit(toIntExact(Long.min(testOpts.rangeDocs, (readOpLimit - readCount)))).iterator();
         }
         while (cursor.hasNext()) {
 
             @SuppressWarnings("unused")
             Document obj = cursor.next();
-            //Increment the read docs counter
+            // Increment the read docs counter
             testResults.setReadDocs(1);
-            readCount+=1;
+            readCount += 1;
         }
         cursor.close();
 
@@ -400,8 +391,7 @@ public class MongoWorker implements Runnable {
         updateSingleRecord(bulkWriter, null);
     }
 
-    private void updateSingleRecord(List<WriteModel<Document>> bulkWriter,
-                                    Document key) {
+    private void updateSingleRecord(List<WriteModel<Document>> bulkWriter, Document key) {
         // Key Query
         rotateCollection();
         Document query = new Document();
@@ -413,8 +403,7 @@ public class MongoWorker implements Runnable {
 
             int recordno = rest + getNextVal(range);
 
-            query.append("_id",
-                    new Document("w", workerID).append("i", recordno));
+            query.append("_id", new Document("w", workerID).append("i", recordno));
         } else {
             query.append("_id", key);
         }
@@ -434,95 +423,111 @@ public class MongoWorker implements Runnable {
         if (!testOpts.findandmodify) {
             bulkWriter.add(new UpdateManyModel<Document>(query, change));
         } else {
-            this.coll.findOneAndUpdate(query, change); //These are immediate not batches
+            this.coll.findOneAndUpdate(query, change); // These are immediate not batches
         }
         testResults.RecordOpsDone("updates", 1);
-        //Increment the inserted docs count.
-        testResults.setInsertDocs(1);
-        updateCount+=1;
+        // Increment the inserted docs count.
+        testResults.setUpdateDocs(1);
+        updateCount += 1;
     }
 
     private TestRecord createNewRecord() {
         int[] arr = new int[2];
         arr[0] = testOpts.arraytop;
         arr[1] = testOpts.arraynext;
-        return new TestRecord(testOpts.numFields, testOpts.depth, testOpts.textFieldLen,
-                workerID, sequence++, testOpts.NUMBER_SIZE,
-                arr, testOpts.blobSize);
+        return new TestRecord(testOpts.numFields, testOpts.depth, testOpts.textFieldLen, workerID, sequence++,
+                testOpts.NUMBER_SIZE, arr, testOpts.blobSize);
     }
-    //TODO ADD SESSION TO ENABLE TRANSACTIONS
+
+    // TODO ADD SESSION TO ENABLE TRANSACTIONS
     private TestRecord insertNewRecord(List<WriteModel<Document>> bulkWriter) {
         TestRecord tr = createNewRecord();
         bulkWriter.add(new InsertOneModel<Document>(tr.internalDoc));
         return tr;
     }
 
-    // The test completes when the durarion slapses or if there is a limit for inserted or 
+    // The test completes when the durarion elapses or if there is a limit for
+    // inserted or
     // readed documents in this case the lower limit will end the test.
     private Boolean isTestComplete() {
-    	Boolean result=false;
-        if(isOpLimit()) {
-    		result = (isReadOpLimit(readCount)|| isInsertOpLimit(insertCount)|| isUpdateOpLimit(updateCount))?true:false;
-    	} else {
-    		result = testResults.GetSecondsElapsed() > testOpts.duration;
-    	};
-    	   	    	
-    	return result;
+        Boolean result = false;
+        if (isOpLimit()) {
+            result = (isReadOpLimit(readCount) || isInsertOpLimit(insertCount) || isUpdateOpLimit(updateCount)) ? true
+                    : false;
+        } else {
+            result = testResults.GetSecondsElapsed() > testOpts.duration;
+        }
+        ;
+
+        return result;
     }
-    
-    
+
     private boolean isOpLimit() {
-    	return (testOpts.readOpLimit==0 && testOpts.insertOpLimit==0 && testOpts.updateOpLimit==0)?false:true;
+        return (testOpts.readOpLimit == 0 && testOpts.insertOpLimit == 0 && testOpts.updateOpLimit == 0) ? false : true;
     }
-    
+
     private boolean isInsertOpLimit(long count) {
-    	long result=0;
-    	if(testOpts.insertOpLimit!=0) {
-    		result = testOpts.insertOpLimit/testOpts.numThreads;
-        	if((workerID==0) && (testOpts.insertOpLimit%testOpts.numThreads!=0)){
-        		result+= testOpts.insertOpLimit%testOpts.numThreads;    		
-        	};
-    	};
-  
-    	return ((result>0)&&(result==count))?true:false;
+        long result = 0;
+        if (testOpts.insertOpLimit != 0) {
+            result = testOpts.insertOpLimit / testOpts.numThreads;
+            if ((workerID == 0) && (testOpts.insertOpLimit % testOpts.numThreads != 0)) {
+                result += testOpts.insertOpLimit % testOpts.numThreads;
+            }
+            ;
+        }
+        ;
+
+        return ((result > 0) && (result == count)) ? true : false;
     }
+
     private boolean isReadOpLimit(long count) {
-    	readOpLimit=0;
-    	if(testOpts.readOpLimit!=0) {
-    		readOpLimit+= testOpts.readOpLimit/testOpts.numThreads;
-          	if((workerID==0) && (testOpts.readOpLimit%testOpts.numThreads!=0)){
-          		readOpLimit+= testOpts.readOpLimit%testOpts.numThreads;    		
-        	};
-    	};
-  
-    	return ((readOpLimit>0)&&(readOpLimit==count))?true:false;
+        readOpLimit = 0;
+        if (testOpts.readOpLimit != 0) {
+            readOpLimit += testOpts.readOpLimit / testOpts.numThreads;
+            if ((workerID == 0) && (testOpts.readOpLimit % testOpts.numThreads != 0)) {
+                readOpLimit += testOpts.readOpLimit % testOpts.numThreads;
+            }
+            ;
+        }
+        ;
+
+        return ((readOpLimit > 0) && (readOpLimit == count)) ? true : false;
     }
+
     private boolean isUpdateOpLimit(long count) {
-    	long result = 0;
-    	if(testOpts.updateOpLimit!=0) {
-    		result+= testOpts.updateOpLimit/testOpts.numThreads;
-          	if((workerID==0) && (testOpts.updateOpLimit%testOpts.numThreads!=0)){
-        		result+= testOpts.updateOpLimit%testOpts.numThreads;    		
-        	};
-    	};  
-    	return ((result>0)&&(result==count))?true:false;
+        long result = 0;
+        if (testOpts.updateOpLimit != 0) {
+            result += testOpts.updateOpLimit / testOpts.numThreads;
+            if ((workerID == 0) && (testOpts.updateOpLimit % testOpts.numThreads != 0)) {
+                result += testOpts.updateOpLimit % testOpts.numThreads;
+            }
+            ;
+        }
+        ;
+        return ((result > 0) && (result == count)) ? true : false;
     }
+
     private boolean isWriteOpLimit(int batch) {
-    	long limit=0;
-    	if(testOpts.insertOpLimit!=0) {
-    		limit = testOpts.insertOpLimit/testOpts.numThreads;
-        	if((workerID==0) && (testOpts.insertOpLimit%testOpts.numThreads!=0)){
-        		limit+= testOpts.insertOpLimit%testOpts.numThreads;    		
-        	};
-    	};
-    	if(testOpts.updateOpLimit!=0) {
-    		limit+= testOpts.updateOpLimit/testOpts.numThreads;
-          	if((workerID==0) && (testOpts.updateOpLimit%testOpts.numThreads!=0)){
-        		limit+= testOpts.updateOpLimit%testOpts.numThreads;    		
-        	};
-    	};
-  
-    	return (testOpts.insertOpLimit!=0?insertCount:0)+(testOpts.updateOpLimit!=0?updateCount:0)+batch==limit?true:false;
+        long limit = 0;
+        if (testOpts.insertOpLimit != 0) {
+            limit = testOpts.insertOpLimit / testOpts.numThreads;
+            if ((workerID == 0) && (testOpts.insertOpLimit % testOpts.numThreads != 0)) {
+                limit += testOpts.insertOpLimit % testOpts.numThreads;
+            }
+            ;
+        }
+        ;
+        if (testOpts.updateOpLimit != 0) {
+            limit += testOpts.updateOpLimit / testOpts.numThreads;
+            if ((workerID == 0) && (testOpts.updateOpLimit % testOpts.numThreads != 0)) {
+                limit += testOpts.updateOpLimit % testOpts.numThreads;
+            }
+            ;
+        }
+        ;
+
+        return (testOpts.insertOpLimit != 0 ? insertCount : 0) + (testOpts.updateOpLimit != 0 ? updateCount : 0)
+                + batch == limit ? true : false;
     }
 
     public void run() {
@@ -537,14 +542,14 @@ public class MongoWorker implements Runnable {
             System.out.println("Worker thread " + workerID + " Started.");
             while (!isTestComplete()) {
                 c++;
-                //Timer isn't granullar enough to sleep for each
+                // Timer isn't granullar enough to sleep for each
                 if (testOpts.opsPerSecond > 0) {
                     double threads = testOpts.numThreads;
                     double opsperthreadsecond = testOpts.opsPerSecond / threads;
                     double sleeptimems = 1000 / opsperthreadsecond;
 
                     if (c == 1) {
-                        //First time randomise
+                        // First time randomise
 
                         Random r = new Random();
                         sleeptimems = r.nextInt((int) Math.floor(sleeptimems));
@@ -552,22 +557,19 @@ public class MongoWorker implements Runnable {
                     }
                     Thread.sleep((int) Math.floor(sleeptimems));
                 }
-                
+
                 if (!workflowed) {
-                // System.out.println("Random op");
-                // Choose the type of op
-                int allops = testOpts.insertops + testOpts.keyqueries
-                        + testOpts.updates + testOpts.rangequeries
-                        + testOpts.arrayupdates;
-                int randop = getNextVal(allops);
+                    // System.out.println("Random op");
+                    // Choose the type of op
+                    int allops = testOpts.insertops + testOpts.keyqueries + testOpts.updates + testOpts.rangequeries
+                            + testOpts.arrayupdates;
+                    int randop = getNextVal(allops);
                     if (randop < testOpts.insertops) {
-                    		insertNewRecord(bulkWriter);
-                    		bulkops++;
-                    } else if (randop < testOpts.insertops
-                            + testOpts.keyqueries) {
+                        insertNewRecord(bulkWriter);
+                        bulkops++;
+                    } else if (randop < testOpts.insertops + testOpts.keyqueries) {
                         simpleKeyQuery();
-                    } else if (randop < testOpts.insertops
-                            + testOpts.keyqueries + testOpts.rangequeries) {
+                    } else if (randop < testOpts.insertops + testOpts.keyqueries + testOpts.rangequeries) {
                         rangeQuery();
                     } else {
                         // An in place single field update
@@ -578,8 +580,7 @@ public class MongoWorker implements Runnable {
                     }
                 } else {
                     // Following a preset workflow
-                    String wfop = workflow.substring(workflowStep,
-                            workflowStep + 1);
+                    String wfop = workflow.substring(workflowStep, workflowStep + 1);
 
                     // System.out.println("Executing workflow op [" + workflow +
                     // "] " + wfop);
@@ -591,8 +592,7 @@ public class MongoWorker implements Runnable {
                         // System.out.println("Insert");
                     } else if (wfop.equals("u")) {
                         if (keyStack.size() > 0) {
-                            updateSingleRecord(bulkWriter,
-                                    keyStack.get(keyStack.size() - 1));
+                            updateSingleRecord(bulkWriter, keyStack.get(keyStack.size() - 1));
                             // System.out.println("Update");
                             if (!testOpts.findandmodify)
                                 bulkops++;
