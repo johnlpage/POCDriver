@@ -57,7 +57,7 @@ public class POCTestReporter implements Runnable {
                 testResults.GetSecondsElapsed(), DF_TIME.format(todaysdate), insertsDone, testResults.initialCount + insertsDone);
 
         if (outfile != null) {
-            outfile.format("%d,%d", testResults.GetSecondsElapsed(), insertsDone);
+            outfile.format("%d,%d,", testResults.GetSecondsElapsed(), insertsDone);
         }
 
         HashMap<String, Long> results = testResults
