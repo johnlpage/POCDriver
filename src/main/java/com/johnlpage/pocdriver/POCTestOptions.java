@@ -305,5 +305,11 @@ public class POCTestOptions {
 		{
 			debug = true;
 		}
+
+		if(cmd.hasOption("reportTime"))
+		{
+			reportTime = Integer.parseInt(cmd.getOptionValue("reportTime"));
+		}
+
 	}
 }
