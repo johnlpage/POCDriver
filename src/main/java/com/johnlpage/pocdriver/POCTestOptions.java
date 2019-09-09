@@ -104,6 +104,7 @@ public class POCTestOptions {
 		cliopt.addOption(null,"updatefields",true,"Number of fields to update (default 1)");
 		cliopt.addOption(null,"projectfields",true,"Number of fields to project in finds (default 0, which is no projection)");				
 		cliopt.addOption(null,"debug",false,"Show more detail if exceptions occur during inserts/queries");
+		cliopt.addOption(null,"reportTime",true,"Stats Interval in seconds");
 
 		CommandLine cmd = parser.parse(cliopt, args);
 		
