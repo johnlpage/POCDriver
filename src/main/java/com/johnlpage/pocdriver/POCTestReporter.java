@@ -23,29 +23,37 @@ public class POCTestReporter implements Runnable {
     private static final DateFormat DF_FULL = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     private static final DateFormat DF_TIME = new SimpleDateFormat("HH:mm:ss");
 
+    private PrintWriter outfile = null;
+
     POCTestReporter(POCTestResults r, MongoClient mc, POCTestOptions t) {
         mongoClient = mc;
         testResults = r;
         testOpts = t;
 
-    }
-
-
-    private void logData() {
-        PrintWriter outfile = null;
-
         if (testOpts.logfile != null) {
-
             try {
                 outfile = new PrintWriter(new BufferedWriter(new FileWriter(testOpts.logfile, true)));
+                outfile.print("elapsed,inserts");
+                for (String o : POCTestResults.opTypes) {
+                    outfile.format(",%s-date,%s-elapsed,%s-inserts", o, o, o);
+                    for(int i=0;i< testOpts.slowThresholds.length;i++) {
+                        outfile.format(",%sms-slow", testOpts.slowThresholds[i]);
+                    }
+                }
+
+                outfile.println();
             } catch (IOException e) {
                 System.out.println(e.getMessage());
             }
         }
+    }
+
+    private void logData() {
 
         Long insertsDone = testResults.GetOpsDone("inserts");
         if (testResults.GetSecondsElapsed() < testOpts.reportTime)
             return;
+
         System.out.println("------------------------");
         if (testOpts.sharded && !testOpts.singleserver) {
             MongoDatabase configdb = mongoClient.getDatabase("config");
@@ -56,12 +64,13 @@ public class POCTestReporter implements Runnable {
         System.out.format("After %d seconds (%s), %,d new documents inserted - collection has %,d in total \n",
                 testResults.GetSecondsElapsed(), DF_TIME.format(todaysdate), insertsDone, testResults.initialCount + insertsDone);
 
-        if (outfile != null) {
+        if (this.outfile != null) {
             outfile.format("%d,%d", testResults.GetSecondsElapsed(), insertsDone);
         }
 
         HashMap<String, Long> results = testResults
                 .GetOpsPerSecondLastInterval();
+
         String[] opTypes = POCTestResults.opTypes;
 
         for (String o : opTypes) {
@@ -71,7 +80,8 @@ public class POCTestReporter implements Runnable {
             if (outfile != null) {
                 String str = DF_FULL.format(todaysdate);
                 String mydate = str.replaceAll("\\s+", "T");
-                outfile.format("%s,%d,%d", mydate, testResults.GetSecondsElapsed(), insertsDone);
+
+                outfile.format(",%s,%d,%d", mydate, testResults.GetSecondsElapsed(), insertsDone);
             }
 
             Long opsDone = testResults.GetOpsDone(o);
@@ -84,6 +94,7 @@ public class POCTestReporter implements Runnable {
                     System.out.println();
                     System.out.format("\t%.2f %% in under %d milliseconds", fastops,
                             slowThreshold);
+
                     if (outfile != null) {
                         outfile.format(",%.2f", fastops);
                     }
@@ -94,17 +105,17 @@ public class POCTestReporter implements Runnable {
                         outfile.format(",%d", 100);
                     }
                 }
-                
+
             }
-            if(outfile != null) outfile.format(",");
-            
+
             System.out.println();
 
         }
         if (outfile != null) {
             outfile.println();
-            outfile.close();
+            outfile.flush();
         }
+
         System.out.println();
     }
 
@@ -117,7 +128,7 @@ public class POCTestReporter implements Runnable {
     /**
      * Output a final summary
      */
-    public void finalReport() {
+    void finalReport() {
 
         Long insertsDone = testResults.GetOpsDone("inserts");
 
@@ -137,7 +148,11 @@ public class POCTestReporter implements Runnable {
             System.out.println();
 
         }
+
         System.out.println();
 
+        if(outfile != null) {
+            outfile.close();
+        }
     }
 }
