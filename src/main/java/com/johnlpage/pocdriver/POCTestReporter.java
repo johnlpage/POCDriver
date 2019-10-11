@@ -35,7 +35,7 @@ public class POCTestReporter implements Runnable {
                 outfile = new PrintWriter(new BufferedWriter(new FileWriter(testOpts.logfile, true)));
                 outfile.print("elapsed,inserts");
                 for (String o : POCTestResults.opTypes) {
-                    outfile.format(",%s-date,%s-elapsed,%s-inserts", o, o, o);
+                    outfile.format(",%s-date,%s-elapsed,%s-inserts,%s-avg", o, o, o, o);
                     for(int i=0;i< testOpts.slowThresholds.length;i++) {
                         outfile.format(",%sms-slow", testOpts.slowThresholds[i]);
                     }
@@ -81,7 +81,7 @@ public class POCTestReporter implements Runnable {
                 String str = DF_FULL.format(todaysdate);
                 String mydate = str.replaceAll("\\s+", "T");
 
-                outfile.format(",%s,%d,%d", mydate, testResults.GetSecondsElapsed(), insertsDone);
+                outfile.format(",%s,%d,%d,%d", mydate, testResults.GetSecondsElapsed(), insertsDone, results.get(o));
             }
 
             Long opsDone = testResults.GetOpsDone(o);
