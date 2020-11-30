@@ -58,7 +58,7 @@ public class LoadRunner {
             coll.createIndex(index, options);
         }
 
-        results.initialCount = coll.count();
+        results.initialCount = coll.countDocuments();
         //Now have a look and see if we are sharded
         //And how many shards and make sure that the collection is sharded
         if (!testOpts.singleserver) {
@@ -138,10 +138,12 @@ public class LoadRunner {
         int threadIdStart = testOpts.threadIdStart;
         //System.out.println("threadIdStart="+threadIdStart);
         ArrayList<MongoWorker> workforce = new ArrayList<MongoWorker>();
+        System.out.println("Launching worker threads");
         for (int i = threadIdStart; i < (testOpts.numThreads + threadIdStart); i++) {
-        	System.out.println("Creating worker "+ i);
+        	//System.out.println("Creating worker "+ i);
             workforce.add(new MongoWorker(mongoClient, testOpts, testResults, i));
         }
+        System.out.println("Worker threads all started");
        
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
         executor.scheduleAtFixedRate(reporter, 0, testOpts.reportTime, TimeUnit.SECONDS);

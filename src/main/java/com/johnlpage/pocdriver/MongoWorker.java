@@ -10,6 +10,7 @@ import com.mongodb.client.model.UpdateManyModel;
 import com.mongodb.client.model.WriteModel;
 import org.apache.commons.math3.distribution.ZipfDistribution;
 import org.bson.Document;
+import java.time.ZonedDateTime;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -187,7 +188,18 @@ public class MongoWorker implements Runnable {
         if (zipfian) {
             rval = zipf.sample();
         } else {
-            rval = (int) Math.abs(Math.floor(rng.nextDouble() * mult));
+            if( testOpts.opsratio ) {
+                rval = (int) Math.abs(Math.floor(rng.nextDouble() * mult));
+            } else {
+                //What operation we do depends on the time so we take a fairly
+                //time and mod it with multi , if we use nanosecnods then this wont work
+                //Seconds is way too large althoughwe coudl scale it
+                //milliseonds might be OK but then 1:1 is not 100:100 so we need to be a bit smarter
+                long now  =  ZonedDateTime.now().toInstant().toEpochMilli();
+                
+                rval = (int) (now % mult);
+
+            }
         }
         return rval;
     }
@@ -460,7 +472,7 @@ public class MongoWorker implements Runnable {
 
 
             int c = 0;
-            System.out.println("Worker thread " + workerID + " Started.");
+           // System.out.println("Worker thread " + workerID + " Started.");
             while (testResults.GetSecondsElapsed() < testOpts.duration) {
                 c++;
                 //Timer isn't granullar enough to sleep for each
@@ -484,6 +496,12 @@ public class MongoWorker implements Runnable {
                     int allops = testOpts.insertops + testOpts.keyqueries
                             + testOpts.updates + testOpts.rangequeries
                             + testOpts.arrayupdates;
+
+                    /* Change - no longer a ratio of operations, that wasn't helpful
+                    as a 50:50 split would be limited to the speed of the slower operation
+                    now a ratio of TIME - 50% of the time it will start an operation of type X*/
+
+
                     int randop = getNextVal(allops);
 
                     if (randop < testOpts.insertops) {
