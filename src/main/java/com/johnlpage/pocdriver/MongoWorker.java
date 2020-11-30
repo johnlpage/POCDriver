@@ -59,7 +59,8 @@ public class MongoWorker implements Runnable {
         	Document dbinfo = mongoClient.getDatabase("config").getCollection("databases").find(new Document("_id",testOpts.databaseName)).first();
         	
             if(dbinfo != null) { primaryShard = dbinfo.getString("primary"); }
-        	
+            //System.out.println("Primary shard is " + primaryShard);
+            
             MongoDatabase admindb = mongoClient.getDatabase("admin");
             Boolean split = false;
 
@@ -72,6 +73,14 @@ public class MongoWorker implements Runnable {
                             .append("middle",
                                     new Document("_id", new Document("w",
                                             workerID).append("i", sequence + 1))));
+                    //As of 4.4 we add this to cap the range and avoid copying back
+                    //with 30 minute timeout.
+                    admindb.runCommand(new Document("split",
+                    testOpts.databaseName + "." + testOpts.collectionName)
+                    .append("middle",
+                            new Document("_id", new Document("w",
+                                    workerID+1).append("i", sequence + 1))));
+
                     split = true;
                 } catch (Exception e) {
 
@@ -99,9 +108,12 @@ public class MongoWorker implements Runnable {
 
             MongoCursor<Document> shardlist = mongoClient.getDatabase("config")
                     .getCollection("shards").find().skip(shardno).limit(1).iterator();
+
             //System.out.println("Getting shard name");
+
             Document obj = mongoClient.getDatabase("config")
                     .getCollection("shards").find().skip(shardno).first();
+            
             String shardName = obj.getString("_id");
             
            
@@ -117,16 +129,17 @@ public class MongoWorker implements Runnable {
                                             workerID).append("i", sequence + 1)))
                             .append("to", shardName)
                             .append("_secondaryThrottle", true)
-                            .append("_waitForDelete", true));
+                            .append("_waitForDelete",true)
+                            .append("writeConcern",new Document("w","majority")));
                     move = true;
                 } catch (Exception e) {
                   
                     if (e.getMessage().contains("that chunk is already on that shard")) {
                         move = true;
                     } else {
-                            System.out.println(e.getMessage());
+                            System.out.println("MOVE CHUNK ERROR: " + e.getMessage());
                         try {
-                        	//System.out.println("Sleeping before trying again");
+                        	System.out.println("Sleeping before trying again");
                             Thread.sleep(1000);
                         } catch (Exception ignored) {
                         	System.out.println(e.getMessage());

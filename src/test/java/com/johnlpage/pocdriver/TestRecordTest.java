@@ -38,7 +38,7 @@ public class TestRecordTest {
         TestRecord testRecord = new TestRecord(nFields, depth, 24,
                 123, 0, numberSize,
                 array, binsize);
-        JsonWriterSettings writerSettings = new JsonWriterSettings(JsonMode.SHELL, true);
+        JsonWriterSettings writerSettings = JsonWriterSettings.builder().outputMode(JsonMode.SHELL).build();
         System.out.println(testRecord.internalDoc.toJson(writerSettings));
         assertTrue(testRecord.internalDoc.containsKey("node2"));
         Document node2 = (Document) testRecord.internalDoc.get("node2");
@@ -61,7 +61,7 @@ public class TestRecordTest {
         TestRecord testRecord = new TestRecord(nFields, depth, 24,
                 123, 0, numberSize,
                 array, binsize);
-        JsonWriterSettings writerSettings = new JsonWriterSettings(JsonMode.SHELL, true);
+        JsonWriterSettings writerSettings = JsonWriterSettings.builder().outputMode(JsonMode.SHELL).build();
         System.out.println(testRecord.internalDoc.toJson(writerSettings));
         assertTrue(testRecord.internalDoc.containsKey("node1"));
         Document node1 = (Document) testRecord.internalDoc.get("node1");

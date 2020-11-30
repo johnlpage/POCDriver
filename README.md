@@ -12,6 +12,7 @@ This is now changed by default - when you specifcy -i, -u , -k etc you specify _
 
 Also be wary of batches, and mixing finds (which cannot be batched) with writes (which can) - either use a batch size of zero or underatand that you can write far faster than you can read as you can send meny writes to the server in one attempt.
 
+Note there is an extra flag --opsratio which enables the previous behaviour. Also if using --zipfian this new behaviour does not apply.
 
 ***NOTE***
 Recently upgraded to [MongoDB 3.8.x Java Driver](http://mongodb.github.io/mongo-java-driver/3.8/).

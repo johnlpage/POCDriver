@@ -50,7 +50,7 @@ public class POCTestReporter implements Runnable {
         if (testOpts.sharded && !testOpts.singleserver) {
             MongoDatabase configdb = mongoClient.getDatabase("config");
             MongoCollection<Document> shards = configdb.getCollection("shards");
-            testOpts.numShards = (int) shards.count();
+            testOpts.numShards = (int) shards.countDocuments();
         }
         Date todaysdate = new Date();
         System.out.format("After %d seconds (%s), %,d new documents inserted - collection has %,d in total \n",

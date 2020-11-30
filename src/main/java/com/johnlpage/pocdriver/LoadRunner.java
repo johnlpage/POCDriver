@@ -83,10 +83,10 @@ public class LoadRunner {
             MongoDatabase configdb = mongoClient.getDatabase("config");
             MongoCollection<Document> settings = configdb.getCollection("settings");
             UpdateResult rval = settings.updateOne(eq("_id", "balancer"), new Document("$set", new Document("stopped", true)),new UpdateOptions().upsert(true));
-            //System.out.println(rval.toString());
-            //System.out.println("Balancer disabled");
+         //   System.out.println(rval.toString());
+          //  System.out.println("Balancer disabled");
             try {
-              //  System.out.println("Enabling Sharding on Database");
+              // System.out.println("Enabling Sharding on Database");
                 admindb.runCommand(new Document("enableSharding", testOpts.databaseName));
             } catch (Exception e) {
                 if (!e.getMessage().contains("already enabled"))
@@ -95,7 +95,7 @@ public class LoadRunner {
 
 
             try {
-                //System.out.println("Sharding Collection");
+            //    System.out.println("Sharding Collection");
                 admindb.runCommand(new Document("shardCollection",
                         testOpts.databaseName + "." + testOpts.collectionName).append("key", new Document("_id", 1)));
             } catch (Exception e) {
@@ -110,14 +110,14 @@ public class LoadRunner {
             MongoCursor<Document> shardc = shards.find().iterator();
             testOpts.numShards = 0;
             while (shardc.hasNext()) {
-                //System.out.println("Found a shard");
+               // System.out.println("Found a shard");
                 shardc.next();
                 testOpts.numShards++;
 
             }
 
 
-            //System.out.println("System has "+testOpts.numShards+" shards");
+            // System.out.println("System has "+testOpts.numShards+" shards");
         }
     }
 
