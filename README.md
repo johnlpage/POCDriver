@@ -1,16 +1,17 @@
 *** Latest Update December 2020 ***
-Prior to the latest version - POCDriver allowed you to specify a ratio of operation types. For example 50:50 Inserts and Queries. However It stuck to this ratio regardless of the relative performace - if for example the server could do 20,000 queries per second but only 3,000 updates per second You woudl get.
+Prior to the latest version - POCDriver allowed you to specify a ratio of operation types. For example 50:50 Inserts and Queries. However It stuck to this ratio regardless of the relative performace - if for example the server could do 20,000 queries per second but only 3,000 updates per second You would get:
 
-100% Queries - 20,000 ops/s
-100% updates - 3,000 ops/s
+100% Queries / 0% Updates - 20,000 queries/s
 
-50% Updates/50% queries -   2,000 updates/s, 2,000 queries/s
+0% Queries / 100% Updates - 3,000 updates/s
 
-This isn't right but it was because it was launching at a 1:1 ratio of ops - and as queries are quicker you still get time for 2,000 not 1,500 however you dont get as many queries as they are throttled by the speed of updates (having to match 1:1)
+50% Queries / 50% Updates -   2,000 updates/s, 2,000 queries/s
+
+This isn't right but it was because it was launching at a 1:1 ratio of opperations/  as queries are quicker than updates you still get time for 2,000 not 1,500 however you dont get as many queries as they are throttled by the speed of updates (having to match 1:1)
 
 This is now changed by default - when you specifcy -i, -u , -k etc you specify _how many milliseconds_ of each cycle to spend doing these operations, assuming these cycles are longer than a single operation takes then you get proper differentiation. You need to be aware though that -i 1 -k 1 , despite being a 1:1 ratio is not quite the same thing as -i 100 -k 100 . In the first case there is likely only time for one operation in the cycle, there is a rounding error if you like. In the latter you might get 10 of one thing done and 500 of another in that 100 milliseconds showing a far better ratio.
 
-Also be wary of batches, and mixing finds (which cannot be batched) with writes (which can) - either use a batch size of zero or underatand that you can write far faster than you can read as you can send meny writes to the server in one attempt.
+Also be wary of batches, and mixing finds (which cannot be batched) with writes (which can) - either use a batch size of one or underatand that you can write far faster than you can read simply because you can send meny writes to the server in one attempt.
 
 Note there is an extra flag --opsratio which enables the previous behaviour. Also if using --zipfian this new behaviour does not apply.
 
