@@ -13,12 +13,15 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class POCTestReporter implements Runnable {
     private POCTestResults testResults;
     private MongoClient mongoClient;
+            
     private POCTestOptions testOpts;
+    Logger logger;
 
     private static final DateFormat DF_FULL = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     private static final DateFormat DF_TIME = new SimpleDateFormat("HH:mm:ss");
@@ -27,6 +30,7 @@ public class POCTestReporter implements Runnable {
         mongoClient = mc;
         testResults = r;
         testOpts = t;
+        logger = LoggerFactory.getLogger(POCTestReporter.class);
 
     }
 
@@ -39,7 +43,7 @@ public class POCTestReporter implements Runnable {
             try {
                 outfile = new PrintWriter(new BufferedWriter(new FileWriter(testOpts.logfile, true)));
             } catch (IOException e) {
-                System.out.println(e.getMessage());
+                logger.error(e.getMessage());
             }
         }
 

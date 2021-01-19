@@ -1,17 +1,19 @@
 package com.johnlpage.pocdriver;
 
-
 import java.util.Date;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class POCTestResults {
 
     /**
      * The time this LoadRunner started
      */
+    Logger logger;
     private Date startTime;
     private Date lastIntervalTime;
     long initialCount;
@@ -21,7 +23,10 @@ public class POCTestResults {
 
 
     POCTestResults(POCTestOptions testOptions) {
+        logger = LoggerFactory.getLogger(POCTestResults.class);
+
         startTime = new Date();
+
         lastIntervalTime = new Date();
         opStats = new ConcurrentHashMap<String, POCopStats>();
 
@@ -94,7 +99,7 @@ public class POCTestResults {
     public void RecordOpsDone(String opType, int howmany) {
         POCopStats os = opStats.get(opType);
         if (os == null) {
-            System.out.println("Cannot fetch opstats for " + opType);
+            logger.warn("Cannot fetch opstats for " + opType);
         } else {
             os.totalOpsDone.addAndGet(howmany);
         }

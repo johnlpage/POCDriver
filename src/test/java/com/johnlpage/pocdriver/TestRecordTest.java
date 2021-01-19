@@ -23,9 +23,9 @@ public class TestRecordTest {
         TestRecord testRecord = new TestRecord(nFields, depth, 24,
                 123, depth, numberSize,
                 array, binsize);
-        System.out.println(testRecord.internalDoc.toJson());
+        //System.out.println(testRecord.internalDoc.toJson());
         Set<String> fields = testRecord.internalDoc.keySet();
-        System.out.println(fields);
+        //System.out.println(fields);
         // fields + _id + bin
         assertEquals(nFields + 2, fields.size());
     }
@@ -39,13 +39,13 @@ public class TestRecordTest {
                 123, 0, numberSize,
                 array, binsize);
         JsonWriterSettings writerSettings = JsonWriterSettings.builder().outputMode(JsonMode.SHELL).build();
-        System.out.println(testRecord.internalDoc.toJson(writerSettings));
+        //System.out.println(testRecord.internalDoc.toJson(writerSettings));
         assertTrue(testRecord.internalDoc.containsKey("node2"));
         Document node2 = (Document) testRecord.internalDoc.get("node2");
         assertTrue(node2.containsKey("fld10"));
         // test field lists
         List<String> fields = testRecord.listFields();
-        System.out.println(fields);
+        //System.out.println(fields);
         assertEquals(nFields, fields.size());
         assertTrue(fields.contains("node2.fld10"));
     }
@@ -62,7 +62,7 @@ public class TestRecordTest {
                 123, 0, numberSize,
                 array, binsize);
         JsonWriterSettings writerSettings = JsonWriterSettings.builder().outputMode(JsonMode.SHELL).build();
-        System.out.println(testRecord.internalDoc.toJson(writerSettings));
+        //System.out.println(testRecord.internalDoc.toJson(writerSettings));
         assertTrue(testRecord.internalDoc.containsKey("node1"));
         Document node1 = (Document) testRecord.internalDoc.get("node1");
         assertTrue(node1.containsKey("node0"));
@@ -70,7 +70,7 @@ public class TestRecordTest {
         assertTrue(node1_0.containsKey("fld6"));
         // test field lists
         List<String> fields = testRecord.listFields();
-        System.out.println(fields);
+        //System.out.println(fields);
         assertEquals(nFields, fields.size());
         assertTrue(fields.contains("node1.node0.fld6"));
     }

@@ -12,6 +12,8 @@ import org.bson.codecs.EncoderContext;
 import org.bson.io.BasicOutputBuffer;
 
 import java.util.logging.LogManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class POCDriver {
 
@@ -19,7 +21,9 @@ public class POCDriver {
 
         POCTestOptions testOpts;
         LogManager.getLogManager().reset();
-        System.out.println("MongoDB Proof Of Concept - Load Generator version 0.1.2");
+        Logger logger = LoggerFactory.getLogger(POCDriver.class);
+
+        logger.info("MongoDB Proof Of Concept  - Load Generator version 0.1.2");
         try {
             testOpts = new POCTestOptions(args);
             // Quit after displaying help message
@@ -28,7 +32,7 @@ public class POCDriver {
             }
 
             if (testOpts.arrayupdates > 0 && (testOpts.arraytop < 1 || testOpts.arraynext < 1)) {
-                System.out.println("You must specify an array size to update arrays");
+                logger.error("You must specify an array size to update arrays");
                 return;
             }
             if (testOpts.printOnly) {
@@ -86,6 +90,7 @@ public class POCDriver {
             newJson.append(json.charAt(c));
         }
 
+        //This is actual output not logging 
         System.out.println(newJson.toString());
 
         //Thanks to Ross Lawley for this bit of black magic
