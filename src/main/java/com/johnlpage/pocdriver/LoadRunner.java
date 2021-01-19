@@ -59,7 +59,7 @@ public class LoadRunner {
             coll.createIndex(index, options);
         }
 
-        results.initialCount = coll.countDocuments();
+        results.initialCount = coll.estimatedDocumentCount();
         // Now have a look and see if we are sharded
         // And how many shards and make sure that the collection is sharded
         if (!testOpts.singleserver) {
