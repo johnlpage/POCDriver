@@ -122,7 +122,6 @@ public class TestRecord {
 
 		if(locations != null && locations.length > 0){
 			int random = new Random().nextInt(locations.length);
-			System.out.println("Random Number : "+ random);
 			internalDoc.append("location", locations[random]);
 		}
 		if (array[0] > 0) {
