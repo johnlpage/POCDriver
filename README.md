@@ -123,6 +123,7 @@ Document shape options
 -f aside from arrays and _id add f fields to the document, after the first 3 every third is an integer, every fifth a date, the rest are text.
 -l how many characters to have in the text fields
 --depth The depth of the document to create.
+--location Adds a field by name location and provides ISO-3166-2 code. One can provide "random" to fill the field with random values. This field is required for zone sharding with Atlas.
 ```
 
 Example
