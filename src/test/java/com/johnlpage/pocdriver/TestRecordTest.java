@@ -22,7 +22,7 @@ public class TestRecordTest {
         int[] array = new int[2];
         TestRecord testRecord = new TestRecord(nFields, depth, 24,
                 123, depth, numberSize,
-                array, binsize);
+                array, binsize, null);
         //System.out.println(testRecord.internalDoc.toJson());
         Set<String> fields = testRecord.internalDoc.keySet();
         //System.out.println(fields);
@@ -37,7 +37,7 @@ public class TestRecordTest {
         int[] array = new int[2];
         TestRecord testRecord = new TestRecord(nFields, depth, 24,
                 123, 0, numberSize,
-                array, binsize);
+                array, binsize, null);
         JsonWriterSettings writerSettings = JsonWriterSettings.builder().outputMode(JsonMode.SHELL).build();
         //System.out.println(testRecord.internalDoc.toJson(writerSettings));
         assertTrue(testRecord.internalDoc.containsKey("node2"));
@@ -60,7 +60,7 @@ public class TestRecordTest {
         int[] array = new int[2];
         TestRecord testRecord = new TestRecord(nFields, depth, 24,
                 123, 0, numberSize,
-                array, binsize);
+                array, binsize, null);
         JsonWriterSettings writerSettings = JsonWriterSettings.builder().outputMode(JsonMode.SHELL).build();
         //System.out.println(testRecord.internalDoc.toJson(writerSettings));
         assertTrue(testRecord.internalDoc.containsKey("node1"));

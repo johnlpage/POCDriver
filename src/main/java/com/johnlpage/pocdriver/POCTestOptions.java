@@ -1,13 +1,7 @@
 package com.johnlpage.pocdriver;
 
 
-import org.apache.commons.cli.CommandLine;
-
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.*;
 
 
 //Yes - lots of public values, getters are OTT here.
@@ -64,6 +58,7 @@ public class POCTestOptions {
 	boolean helpOnly = false;
 	String connectionDetails = "mongodb://localhost:27017";
 	boolean fulltext;
+	String[] areaCodes = null;
 	
 	POCTestOptions(String[] args) throws ParseException
 	{
@@ -106,6 +101,7 @@ public class POCTestOptions {
 		cliopt.addOption(null,"projectfields",true,"Number of fields to project in finds (default 0, which is no projection)");				
 		cliopt.addOption(null,"debug",false,"Show more detail if exceptions occur during inserts/queries");
 		cliopt.addOption(null,"opratio",false,"Maintain a strict ratio of number of ops not time - legacy mode");
+		cliopt.addOption(null,"location",true,"Adds a location field in the payload ( agrs : comma,seperated,list,of,country,code,)");
 
 		CommandLine cmd = parser.parse(cliopt, args);
 		
@@ -310,6 +306,12 @@ public class POCTestOptions {
 		if(cmd.hasOption("debug"))
 		{
 			debug = true;
+		}
+
+		if(cmd.hasOption("location")){
+			String areaCodesInString = cmd.getOptionValue("location");
+			System.out.println("Got Location value: "+areaCodesInString);
+			areaCodes = areaCodesInString.split(",");
 		}
 	}
 }
