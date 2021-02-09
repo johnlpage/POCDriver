@@ -448,7 +448,7 @@ public class MongoWorker implements Runnable {
         arr[0] = testOpts.arraytop;
         arr[1] = testOpts.arraynext;
         return new TestRecord(testOpts.numFields, testOpts.depth, testOpts.textFieldLen, workerID, sequence++,
-                testOpts.NUMBER_SIZE, arr, testOpts.blobSize, null);
+                testOpts.NUMBER_SIZE, arr, testOpts.blobSize, testOpts.areaCodes);
     }
 
     private TestRecord insertNewRecord(List<WriteModel<Document>> bulkWriter) {
