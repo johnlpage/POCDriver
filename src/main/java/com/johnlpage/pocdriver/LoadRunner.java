@@ -37,29 +37,38 @@ public class LoadRunner {
         MongoCollection<Document> coll;
         // Create indexes and suchlike
         db = mongoClient.getDatabase(testOpts.databaseName);
-        coll = db.getCollection(testOpts.collectionName);
-        if (testOpts.emptyFirst) {
-            coll.drop();
-        }
+        int numCollections = testOpts.numcollections;
+        for (int i = 0; i < numCollections; i++) {
+          // Handle case where we have only one collection specially since in
+          // that case we don't have a suffix in collectionName.
+          if (numCollections == 1) {
+            coll = db.getCollection(testOpts.collectionName);
+          } else {
+            coll = db.getCollection(testOpts.collectionName + i);
+          }
 
-        TestRecord testRecord = new TestRecord(testOpts);
-        List<String> fields = testRecord.listFields();
-        for (int x = 0; x < testOpts.secondaryidx; x++) {
-            coll.createIndex(new Document(fields.get(x), 1));
-        }
-        if (testOpts.fulltext) {
-            IndexOptions options = new IndexOptions();
-            options.background(true);
-            BasicDBObject weights = new BasicDBObject();
-            weights.put("lorem", 15);
-            weights.put("_fulltext.text", 5);
-            options.weights(weights);
-            Document index = new Document();
-            index.put("$**", "text");
-            coll.createIndex(index, options);
-        }
+          if (testOpts.emptyFirst) {
+              coll.drop();
+          }
 
-        results.initialCount = coll.estimatedDocumentCount();
+          TestRecord testRecord = new TestRecord(testOpts);
+          List<String> fields = testRecord.listFields();
+          for (int x = 0; x < testOpts.secondaryidx; x++) {
+              coll.createIndex(new Document(fields.get(x), 1));
+          }
+          if (testOpts.fulltext) {
+              IndexOptions options = new IndexOptions();
+              options.background(true);
+              BasicDBObject weights = new BasicDBObject();
+              weights.put("lorem", 15);
+              weights.put("_fulltext.text", 5);
+              options.weights(weights);
+              Document index = new Document();
+              index.put("$**", "text");
+              coll.createIndex(index, options);
+          }
+          results.initialCount += coll.estimatedDocumentCount();
+        }
         // Now have a look and see if we are sharded
         // And how many shards and make sure that the collection is sharded
         if (!testOpts.singleserver) {
