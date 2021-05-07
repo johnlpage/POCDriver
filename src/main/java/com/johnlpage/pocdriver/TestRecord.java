@@ -10,6 +10,7 @@ import org.bson.types.Binary;
 import de.svenjacobs.loremipsum.LoremIpsum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.util.Random;
 
 
 //A Test Record is a MongoDB Record Object that is self populating
@@ -106,10 +107,10 @@ public class TestRecord {
 	TestRecord(POCTestOptions testOpts) {
 		
 		this(testOpts.numFields, testOpts.depth, testOpts.textFieldLen, testOpts.workingset, 0,
-				testOpts.NUMBER_SIZE, new int[]{testOpts.arraytop, testOpts.arraynext}, testOpts.blobSize);
+				testOpts.NUMBER_SIZE, new int[]{testOpts.arraytop, testOpts.arraynext}, testOpts.blobSize, null);
 	}
 
-	TestRecord(int nFields, int depth, int stringLength, int workerID, int sequence, long numberSize, int[] array, int binsize) {
+	TestRecord(int nFields, int depth, int stringLength, int workerID, int sequence, long numberSize, int[] array, int binsize, String[] locations) {
 		logger = LoggerFactory.getLogger(TestRecord.class);
 		internalDoc = new Document();
 		rng = new Random();
@@ -119,6 +120,10 @@ public class TestRecord {
 
 		addFields(internalDoc, 0, nFields, depth, stringLength, numberSize);
 
+		if(locations != null && locations.length > 0){
+			int random = new Random().nextInt(locations.length);
+			internalDoc.append("location", locations[random]);
+		}
 		if (array[0] > 0) {
 			if (ar == null) {
 				ar = new ArrayList<ArrayList<Integer>>(array[0]);

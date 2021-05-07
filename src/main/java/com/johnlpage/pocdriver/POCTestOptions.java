@@ -1,13 +1,7 @@
 package com.johnlpage.pocdriver;
 
 
-import org.apache.commons.cli.CommandLine;
-
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.*;
 
 
 //Yes - lots of public values, getters are OTT here.
@@ -64,6 +58,8 @@ public class POCTestOptions {
 	boolean helpOnly = false;
 	String connectionDetails = "mongodb://localhost:27017";
 	boolean fulltext;
+	String[] locationCodes = null;
+	String[] defaultLocationCodes = new String[]{"AD","AE","AF","AG","AI","AL","AM","AO","AQ","AR","AS","AT","AU","AU-ACT","AU-NSW","AU-NT","AU-QLD","AU-SA","AU-TAS","AU-VIC","AU-WA","AW","AX","AZ","BA","BB","BD","BE","BE-BRU","BE-VLG","BE-WAL","BF","BG","BH","BI","BJ","BL","BM","BN","BO","BQ","BR","BR-AC","BR-AL","BR-AM","BR-AP","BR-BA","BR-CE","BR-DF","BR-ES","BR-GO","BR-MA","BR-MG","BR-MS","BR-MT","BR-PA","BR-PB","BR-PE","BR-PI","BR-PR","BR-RJ","BR-RN","BR-RO","BR-RR","BR-RS","BR-SC","BR-SE","BR-SP","BR-TO","BS","BT","BV","BW","BY","BZ","CA","CA-AB","CA-BC","CA-MB","CA-NB","CA-NL","CA-NS","CA-NT","CA-NU","CA-ON","CA-PE","CA-QC","CA-SK","CA-YT","CC","CD","CF","CG","CH","CI","CK","CL","CM","CN","CN-11","CN-12","CN-13","CN-14","CN-15","CN-21","CN-22","CN-23","CN-31","CN-32","CN-33","CN-34","CN-35","CN-36","CN-37","CN-41","CN-42","CN-43","CN-44","CN-45","CN-46","CN-50","CN-51","CN-52","CN-53","CN-54","CN-61","CN-62","CN-63","CN-64","CN-65","CO","CR","CU","CV","CW","CX","CY","CZ","DE","DE-BB","DE-BE","DE-BW","DE-BY","DE-HB","DE-HE","DE-HH","DE-MV","DE-NI","DE-NW","DE-RP","DE-SH","DE-SL","DE-SN","DE-ST","DE-TH","DJ","DK","DM","DO","DZ","EC","EE","EG","EH","ER","ES","ET","FI","FJ","FK","FM","FO","FR","FR-ARA","FR-BFC","FR-E","FR-F","FR-GES","FR-H","FR-HDF","FR-J","FR-NAQ","FR-NOR","FR-OCC","FR-R","FR-U","GA","GB","GB-ENG","GB-NIR","GB-SCT","GB-WLS","GD","GE","GF","GG","GH","GI","GL","GM","GN","GP","GQ","GR","GS","GT","GU","GW","GY","HK","HK-KKC","HM","HN","HR","HT","HU","ID","IE","IE-C","IE-L","IE-M","IE-U","IL","IM","IN","IN-AN","IN-AP","IN-AR","IN-AS","IN-BR","IN-CH","IN-CT","IN-DD","IN-DL","IN-DN","IN-GA","IN-GJ","IN-HP","IN-HR","IN-JH","IN-JK","IN-KA","IN-KL","IN-LD","IN-MH","IN-ML","IN-MN","IN-MP","IN-MZ","IN-NL","IN-OR","IN-PB","IN-PY","IN-RJ","IN-SK","IN-TG","IN-TN","IN-TR","IN-UL","IN-UP","IN-WB","IO","IQ","IR","IS","IT","JE","JM","JO","JP","JP-01","JP-02","JP-03","JP-04","JP-05","JP-06","JP-07","JP-08","JP-09","JP-10","JP-11","JP-12","JP-13","JP-14","JP-15","JP-16","JP-17","JP-18","JP-19","JP-20","JP-21","JP-22","JP-23","JP-24","JP-25","JP-26","JP-27","JP-28","JP-29","JP-30","JP-31","JP-32","JP-33","JP-34","JP-35","JP-36","JP-37","JP-38","JP-39","JP-40","JP-41","JP-42","JP-43","JP-44","JP-45","JP-46","JP-47","KE","KG","KH","KI","KM","KN","KP","KR","KR-11","KR-22","KR-26","KR-27","KR-28","KR-29","KR-30","KR-31","KR-41","KR-42","KR-43","KR-44","KR-45","KR-46","KR-47","KR-48","KR-49","KW","KY","KZ","LA","LB","LC","LI","LK","LR","LS","LT","LU","LV","LY","MA","MC","MD","ME","MF","MG","MH","MK","ML","MM","MN","MO","MP","MQ","MR","MS","MT","MU","MV","MW","MX","MY","MZ","NA","NC","NE","NF","NG","NI","NL","NL-DR","NL-FL","NL-FR","NL-GE","NL-GR","NL-LI","NL-NB","NL-NH","NL-OV","NL-UT","NL-ZE","NL-ZH","NO","NP","NR","NU","NZ","OM","PA","PE","PF","PG","PH","PK","PL","PM","PN","PR","PS","PT","PW","PY","QA","RE","RO","RS","RU","RW","SA","SB","SC","SD","SE","SG","SG-01","SG-02","SG-03","SG-04","SG-05","SH","SI","SJ","SK","SL","SM","SN","SO","SR","SS","ST","SV","SX","SY","SZ","TC","TD","TF","TG","TH","TJ","TK","TL","TM","TN","TO","TR","TT","TV","TW","TW-CHA","TW-CYI","TW-CYQ","TW-HSQ","TW-HSZ","TW-HUA","TW-ILA","TW-KEE","TW-KHH","TW-KIN","TW-LIE","TW-MIA","TW-NAN","TW-NWT","TW-PEN","TW-PIF","TW-TAO","TW-TNN","TW-TPE","TW-TTT","TW-TXG","TW-YUN","TZ","UA","UG","UM","US","US-AK","US-AL","US-AR","US-AZ","US-CA","US-CO","US-CT","US-DC","US-DE","US-FL","US-GA","US-HI","US-IA","US-ID","US-IL","US-IN","US-KS","US-KY","US-LA","US-MA","US-MD","US-ME","US-MI","US-MN","US-MO","US-MS","US-MT","US-NC","US-ND","US-NE","US-NH","US-NJ","US-NM","US-NV","US-NY","US-OH","US-OK","US-OR","US-PA","US-RI","US-SC","US-SD","US-TN","US-TX","US-UT","US-VA","US-VT","US-WA","US-WI","US-WV","US-WY","UY","UZ","VA","VC","VE","VG","VI","VN","VU","WF","WS","YE","YT","ZA","ZM","ZW"};
 	
 	POCTestOptions(String[] args) throws ParseException
 	{
@@ -106,6 +102,7 @@ public class POCTestOptions {
 		cliopt.addOption(null,"projectfields",true,"Number of fields to project in finds (default 0, which is no projection)");				
 		cliopt.addOption(null,"debug",false,"Show more detail if exceptions occur during inserts/queries");
 		cliopt.addOption(null,"opratio",false,"Maintain a strict ratio of number of ops not time - legacy mode");
+		cliopt.addOption(null,"location",true,"Adds a location field in the payload ( agrs : comma,seperated,list,of,country,code,)");
 
 		CommandLine cmd = parser.parse(cliopt, args);
 		
@@ -310,6 +307,17 @@ public class POCTestOptions {
 		if(cmd.hasOption("debug"))
 		{
 			debug = true;
+		}
+
+		if(cmd.hasOption("location")){
+			String areaCodesInString = cmd.getOptionValue("location");
+			if(areaCodesInString.equalsIgnoreCase("random")){
+				locationCodes = defaultLocationCodes;
+			} else if (areaCodesInString != null){
+				locationCodes = areaCodesInString.split(",");
+			} else {
+				locationCodes = null;
+			}
 		}
 	}
 }
