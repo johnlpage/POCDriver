@@ -5,6 +5,7 @@ import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.BulkWriteOptions;
 import com.mongodb.client.model.InsertOneModel;
 import com.mongodb.client.model.UpdateManyModel;
 import com.mongodb.client.model.WriteModel;
@@ -42,6 +43,7 @@ public class MongoWorker implements Runnable {
     private ArrayList<Document> keyStack;
     private int lastCollection;
     private int maxCollections;
+    private BulkWriteOptions bulkOptions = new BulkWriteOptions();
 
     private void ReviewShards() {
     	String primaryShard = null;
@@ -179,6 +181,7 @@ public class MongoWorker implements Runnable {
             workflowed = true;
             keyStack = new ArrayList<Document>();
         }
+        bulkOptions.ordered(testOpts.orderedBatch);
 
     }
 
@@ -232,7 +235,7 @@ public class MongoWorker implements Runnable {
         while (!submitted && !bulkWriter.isEmpty()) {  // can be empty if we removed a Dupe key error
             try {
                 submitted = true;
-                bwResult = coll.bulkWrite(bulkWriter);
+                bwResult = coll.bulkWrite(bulkWriter,bulkOptions);
             } catch (Exception e) {
                 //We had a problem with this bulk op - some may be completed, some may not
 

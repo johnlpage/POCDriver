@@ -46,6 +46,7 @@ public class POCTestOptions {
 	int rangeDocs=10;
 	int updateFields=1;
 	int projectFields=0;
+	boolean orderedBatch = true;
 
 	/**
 	 * Control whether we show full stacktraces on error
@@ -104,6 +105,7 @@ public class POCTestOptions {
 		cliopt.addOption(null,"updatefields",true,"Number of fields to update (default 1)");
 		cliopt.addOption(null,"projectfields",true,"Number of fields to project in finds (default 0, which is no projection)");				
 		cliopt.addOption(null,"debug",false,"Show more detail if exceptions occur during inserts/queries");
+		cliopt.addOption(null,"ordered",true,"Use ordered or unordered batches");
 
 		CommandLine cmd = parser.parse(cliopt, args);
 		
@@ -303,6 +305,11 @@ public class POCTestOptions {
 		if(cmd.hasOption("debug"))
 		{
 			debug = true;
+		}
+		
+		if(cmd.hasOption("ordered"))
+		{
+			orderedBatch = Boolean.parseBoolean(cmd.getOptionValue("ordered"));
 		}
 	}
 }
