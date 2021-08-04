@@ -12,7 +12,5 @@ public class POCopStats {
     POCopStats() {
         intervalCount = new AtomicLong(0);
         totalOpsDone = new AtomicLong(0);
-        //slowOps = new AtomicLong(0);
-        
     }
 }

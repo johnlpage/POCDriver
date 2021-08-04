@@ -8,8 +8,8 @@
   <packaging>jar</packaging>
 
   <properties>
-    <maven.compiler.source>1.6</maven.compiler.source>
-    <maven.compiler.target>1.6</maven.compiler.target>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8  </maven.compiler.target>
   </properties>
 
   <build>
@@ -42,9 +42,14 @@
 
   <dependencies>
     <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>1.1.1</version>
+    </dependency>
+    <dependency>
       <groupId>org.mongodb</groupId>
       <artifactId>mongodb-driver-sync</artifactId>
-      <version>3.8.1</version>
+      <version>4.2.3</version>
     </dependency>
     <dependency>
       <groupId>commons-cli</groupId>
@@ -74,8 +79,20 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.12</version>
+      <version>4.13.1</version>
       <scope>test</scope>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.xerial.snappy/snappy-java -->
+    <dependency>
+      <groupId>org.xerial.snappy</groupId>
+      <artifactId>snappy-java</artifactId>
+      <version>1.1.8.4</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/com.github.luben/zstd-jni -->
+    <dependency>
+      <groupId>com.github.luben</groupId>
+      <artifactId>zstd-jni</artifactId>
+      <version>1.4.9-1</version>
     </dependency>
   </dependencies>
 

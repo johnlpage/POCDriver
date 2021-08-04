@@ -1,0 +1,14 @@
+# IDEA, taken from https://github.com/github/gitignore/blob/master/Global/JetBrains.gitignore
+workspace.xml
+tasks.xml
+usage.statistics.xml
+dictionaries/
+shelf/
+dataSources/
+dataSources.ids
+dataSources.local.xml
+sqlDataSources.xml
+dynamic.xml
+uiDesigner.xml
+dbnavigator.xml
+libraries/
