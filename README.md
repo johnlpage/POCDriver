@@ -1,5 +1,5 @@
 *** Latest Update December 2020 ***
-Prior to the latest version - POCDriver allowed you to specify a ratio of operation types. For example 50:50 Inserts and Queries. However It stuck to this ratio regardless of the relative performace - if for example the server could do 20,000 queries per second but only 3,000 updates per second You would get:
+Prior to the latest version - POCDriver allowed you to specify a ratio of operation types. For example, 50:50 Inserts and Queries. However, it stuck to this ratio regardless of the relative performace - if for example the server could do 20,000 queries per second but only 3,000 updates per second You would get:
 
 100% Queries / 0% Updates - 20,000 queries/s
 
@@ -48,7 +48,11 @@ Execute
 $ mvn clean package
 ```
 
-and you will find `POCDriver.jar` in `bin` folder.
+and you will find `POCDriver.jar` in `bin` folder. You can execude this program by running,
+
+    java -jar ./bin/POCDriver.jar
+    
+Then postpend to this command the flags and arguments you want that are specified below. 
 
 
 
