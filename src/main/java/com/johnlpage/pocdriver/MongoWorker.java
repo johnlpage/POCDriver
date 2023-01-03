@@ -356,6 +356,20 @@ public class MongoWorker implements Runnable {
         return myDoc;
     }
 
+        private Document simpleGetKey() {
+        // Key Query
+        rotateCollection();
+        Document query = new Document();
+        int range = sequence * testOpts.workingset / 100;
+        int rest = sequence - range;
+
+        int recordno = rest + getNextVal(range);
+
+        query.append("_id", new Document("w", workerID).append("i", recordno));
+
+        return query;
+    }
+
     private void rangeQuery() {
         // Key Query
         rotateCollection();
@@ -440,6 +454,41 @@ public class MongoWorker implements Runnable {
             tr.internalDoc.remove("_id");
             change = new Document("$set", tr.internalDoc);
         }
+
+        if (!testOpts.findandmodify) {
+            bulkWriter.add(new UpdateManyModel<Document>(query, change));
+        } else {
+            this.coll.findOneAndUpdate(query, change); // These are immediate not batches
+        }
+        testResults.RecordOpsDone("updates", 1);
+    }
+    
+    private void incrementSingleRecord(List<WriteModel<Document>> bulkWriter) {
+        incrementSingleRecord(bulkWriter, null);
+    }
+
+    private void incrementSingleRecord(List<WriteModel<Document>> bulkWriter, Document key) {
+        // Key Query
+        rotateCollection();
+        Document query = new Document();
+        Document change;
+
+        if (key == null) {
+            int range = sequence * testOpts.workingset / 100;
+            int rest = sequence - range;
+
+            int recordno = rest + getNextVal(range);
+
+            query.append("_id", new Document("w", workerID).append("i", recordno));
+        } else {
+            query.append("_id", key);
+        }
+
+        int updateFields = (testOpts.updateFields <= testOpts.numFields) ? testOpts.updateFields : testOpts.numFields;
+
+        Document fields = new Document("fld0", 1);
+        change = new Document("$inc", fields);
+
 
         if (!testOpts.findandmodify) {
             bulkWriter.add(new UpdateManyModel<Document>(query, change));
@@ -536,6 +585,13 @@ public class MongoWorker implements Runnable {
                             if (!testOpts.findandmodify)
                                 bulkops++;
                         }
+                    } else if (wfop.equals("I")) {
+                        if (keyStack.size() > 0) {
+                            incrementSingleRecord(bulkWriter, keyStack.get(keyStack.size() - 1));
+                            logger.debug("Increment");
+                            if (!testOpts.findandmodify)
+                                bulkops++;
+                        }		     
                     } else if (wfop.equals("p")) {
                         // Pop the top thing off the stack
                         if (keyStack.size() > 0) {
@@ -544,6 +600,12 @@ public class MongoWorker implements Runnable {
                     } else if (wfop.equals("k")) {
                         // Find a new record an put it on the stack
                         Document r = simpleKeyQuery();
+                        if (r != null) {
+                            keyStack.add((Document) r.get("_id"));
+                        }
+                    } else if (wfop.equals("K")) {
+                        // Get a new _id but don't read the doc and put it on the stack
+                        Document r = simpleGetKey();
                         if (r != null) {
                             keyStack.add((Document) r.get("_id"));
                         }
