@@ -103,11 +103,11 @@ The `-c`/`--host` flag is the MongoDB connection string (aka connection URI) fro
 For the `-v`/`--workflow` flag, the valid options are:
 
 - `i` (lowercase `i`): Insert a new record, push it's key onto our stack
-- `I` (uppercase `i`): Increment single stack record
+- `I` (UPPERCASE `i`): Increment single stack record
 - `u` (lowercase `u`): Update single stack record
 - `p` (lowercase `p`): Pop off a stack record
 - `k` (lowercase `k`): Find a new record an put it on the stack
-- `K` (uppercase `k`): Get a new `_id` but don't read the doc and put it on the stack
+- `K` (UPPERCASE `k`): Get a new `_id` but don't read the doc and put it on the stack
 
 Examples:
 
