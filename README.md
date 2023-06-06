@@ -1,5 +1,5 @@
 *** Latest Update December 2020 ***
-Prior to the latest version - POCDriver allowed you to specify a ratio of operation types. For example, 50:50 Inserts and Queries. However, it stuck to this ratio regardless of the relative performace - if for example the server could do 20,000 queries per second but only 3,000 updates per second You would get:
+Prior to the latest version - POCDriver allowed you to specify a ratio of operation types. For example, 50:50 Inserts and Queries. However, it stuck to this ratio regardless of the relative performance - if for example the server could do 20,000 queries per second but only 3,000 updates per second you would get:
 
 100% Queries / 0% Updates - 20,000 queries/s
 
@@ -7,57 +7,63 @@ Prior to the latest version - POCDriver allowed you to specify a ratio of operat
 
 50% Queries / 50% Updates -   2,000 updates/s, 2,000 queries/s
 
-This isn't right but it was because it was launching at a 1:1 ratio of opperations/  as queries are quicker than updates you still get time for 2,000 not 1,500 however you dont get as many queries as they are throttled by the speed of updates (having to match 1:1)
+This isn't right but it was because it was launching at a 1:1 ratio of operations/ as queries are quicker than updates you still get time for 2,000 not 1,500 however you don't get as many queries as they are throttled by the speed of updates (having to match 1:1)
 
-This is now changed by default - when you specifcy -i, -u , -k etc you specify _how many milliseconds_ of each cycle to spend doing these operations, assuming these cycles are longer than a single operation takes then you get proper differentiation. You need to be aware though that -i 1 -k 1 , despite being a 1:1 ratio is not quite the same thing as -i 100 -k 100 . In the first case there is likely only time for one operation in the cycle, there is a rounding error if you like. In the latter you might get 10 of one thing done and 500 of another in that 100 milliseconds showing a far better ratio.
+This is now changed by default - when you specify `-i`, `-u`, `-k` etc you specify _how many milliseconds_ of each cycle to spend doing these operations, assuming these cycles are longer than a single operation takes then you get proper differentiation. You need to be aware though that `-i 1 -k 1`, despite being a 1:1 ratio is not quite the same thing as `-i 100 -k 100`. In the first case there is likely only time for one operation in the cycle, there is a rounding error if you like. In the latter you might get 10 of one thing done and 500 of another in that 100 milliseconds showing a far better ratio.
 
-Also be wary of batches, and mixing finds (which cannot be batched) with writes (which can) - either use a batch size of one or underatand that you can write far faster than you can read simply because you can send meny writes to the server in one attempt.
+Also be wary of batches, and mixing finds (which cannot be batched) with writes (which can) - either use a batch size of one or understand that you can write far faster than you can read simply because you can send many writes to the server in one attempt.
 
-Note there is an extra flag --opsratio which enables the previous behaviour. Also if using --zipfian this new behaviour does not apply.
+Note there is an extra flag `--opsratio` which enables the previous behaviour. Also if using `--zipfian` this new behaviour does not apply.
 
 ***NOTE***
-Recently upgraded to [MongoDB 3.8.x Java Driver](http://mongodb.github.io/mongo-java-driver/3.8/).
+Recently upgraded to [MongoDB 4.1.x Java Driver](http://mongodb.github.io/mongo-java-driver/4.1/).
 
-Introduction
-------------
+## Introduction
+
 Disclaimer: POCDriver is NOT in any way an official MongoDB product or project.
 
 This is open source, immature, and undoubtedly buggy code. If you find bugs please fix them and [send a pull request](https://github.com/johnlpage/POCDriver/pulls) or report in the [GitHub issue queue](https://github.com/johnlpage/POCDriver/issues).
 
 This tool is designed to make it easy to answer many of the questions people have during a MongoDB 'Proof of Concept':
 
-* How fast will MongoDB be on my hardware?
-* How could MongoDB handle my workload?
-* How does MongoDB scale?
-* How does High Availability work (aka How do I handle a failover)?
+- How fast will MongoDB be on my hardware?
+- How could MongoDB handle my workload?
+- How does MongoDB scale?
+- How does High Availability work (aka How do I handle a failover)?
 
 POCDriver is a single JAR file which allows you to specify and run a number of different workloads easily from the command line. It is intended to show how MongoDB should be used for various tasks and avoids testing your own client code versus MongoDB's capabilities.
 
 POCDriver is an alternative to using generic tools like YCSB. Unlike these tools, POCDriver:
 
-  * Only works with MongoDB. This shows what MongoDB can do rather than comparing lowest common denominator between systems that aren't directly comparable.
+- Only works with MongoDB. This shows what MongoDB can do rather than comparing lowest common denominator between systems that aren't directly comparable.
 
-  * Includes much more sophisticated workloads using the appropriate MongoDB feature.
+- Includes much more sophisticated workloads using the appropriate MongoDB feature.
 
-Build
------
+## Build
 
-Execute
+Execute:
 
 ```bash
 mvn clean package
 ```
 
-and you will find `POCDriver.jar` in `bin` folder. You can execude this program by running,
+and you will find `POCDriver.jar` in `bin` folder. You can execute this program by running,
 
 ```bash
 java -jar ./bin/POCDriver.jar
 ```
 
-Then postpend to this command the flags and arguments you want that are specified below. 
+Then append the flags and arguments you want to this command, which can be found specified below. 
 
-Basic usage
------------
+### Requirements to Build
+
+- commons-cli-1.3.jar
+- commons-codec-1.10.jar
+- gson-2.2.4.jar
+- loremipsum-1.0.jar (<http://sourceforge.net/projects/loremipsum/files/>)
+- mongo-driver-sync-4.1.1.jar
+
+## Basic usage
 
 If run with no arguments, POCDriver will try to insert documents into a MongoDB deployment running on localhost as quickly as possible.
 
@@ -65,73 +71,84 @@ There will be only the `_id` index and documents will have 10 fields.
 
 Use `--print` to see what the documents look like.
 
-Client options
--------------
-```
--h show help
--p show what the documents look like in the test
--t how many threads to run on the client and thus how many connections.
--s what threshold to consider slow when reporting latency percentages in ms
--o output stats to a file rather then the screen
--n use a namespace 'schema.collection' of your choice
--d how long to run the loader for.
--q *try* to limit rate to specified ops per second.
--c a MongoDB connection string (note: you can include write concerns and thread pool size info in this)
-```
+### Client options
 
+| Flag                                | Description |
+| ----------------------------------- | ----------- |
+| `-h`, `--help`                      | Show Help
+| `-p`, `--print`                     | Print out a sample document according to the other parameters then quit
+| `-t <arg>`, `--threads <arg>`       | Number of threads (default 4)
+| `-s <arg>`, `--slowthreshold <arg>` | Slow operation threshold in ms, use comma to separate multiple thresholds (default 50)
+| `-q <arg>`, `--opsPerSecond <arg>`  | Try to rate limit the total ops/s to the specified amount
+| `-c <arg>`, `--host <arg>`          | MongoDB connection details (default `mongodb://localhost:27017`)
 
-Basic operations.
------------------
-```
- -k Fetch a single document using its primary key
- -r fetch a range of 10 documents
- -u increment an integer field in a random document
- -i add a new document
-```
+The `-c`/`--host` flag is the MongoDB connection string (aka connection URI) from the MongoDB Java driver. Documentation on its format and available options can be found here: <http://mongodb.github.io/mongo-java-driver/4.1/apidocs/mongodb-driver-core/com/mongodb/ConnectionString.html>
 
-Complex operations
-------------------
-```
- -g update a random value in the array (must have arrays enabled)
- -v perform sets of operations on a stack:
-    -v iuu will insert then update that document twice
-    -v kui will find a document, update it, then insert a new document
- 
- The last document is placed on a stack and p pops it off so:
-    -v kiippu  Finds a document, adds two, then pops them off and updates the original document found.
-```
+### Basic operations
 
- Note: If you specify a workflow via the `-v` flag, the basic operations above will be ignored and the operations listed will be performed instead.
+| Flag                                | Description |
+| ----------------------------------- | ----------- |
+| `-k <arg>`, `--keyqueries <arg>`    | Ratio of key query operations (default 0)
+| `-r <arg>`, `--rangequeries <arg>`  | Ratio of range query operations (default 0)
+| `-u <arg>`, `--updates <arg>`       | Ratio of update operations (default 0)
+| `-i <arg>`, `--inserts <arg>`       | Ratio of insert operations (default 100)
 
-Control options
----------------
-```
- -m when updating a document use findAndModify to fetch a copy of the new incremented value
- -j when updating or querying limit the set to the last N% of documents added
- -b what size to use for operation batches.
- --rangedocs     number of documents to fetch for range queries (default 10)
- --updatefields  number of fields to update (default 1)
- --projectfields number of fields to project in finds (default 0 - return full document)
-```
-Collection options
--------------------
-```
--x how many fields to index aside from _id
--w do not shard this collection on a sharded system
--e empty this collection at the start of the run.
-```
-Document shape options
---------------------
-```
--a add an X by Y array of integers to each document using -a X:Y
--f aside from arrays and _id add f fields to the document, after the first 3 every third is an integer, every fifth a date, the rest are text.
--l how many characters to have in the text fields
---depth The depth of the document to create.
---location Adds a field by name location and provides ISO-3166-2 code. One can provide "random" to fill the field with random values. This field is required for zone sharding with Atlas.
-```
+### Complex operations
 
-Example
--------
+| Flag                                | Description |
+| ----------------------------------- | ----------- |
+| `-g <arg>`, `--arrayupdates <arg>`  | Ratio of array increment ops (requires option `-a`/`--arrays`) (default 0)
+| `-v <arg>`, `--workflow <arg>`      | Specify a set of ordered operations per thread from character set `IiuKkp`.
+
+For the `-v`/`--workflow` flag, the valid options are:
+
+- `i` (lowercase `i`): Insert a new record, push it's key onto our stack
+- `I` (uppercase `i`): Increment single stack record
+- `u` (lowercase `u`): Update single stack record
+- `p` (lowercase `p`): Pop off a stack record
+- `k` (lowercase `k`): Find a new record an put it on the stack
+- `K` (uppercase `k`): Get a new `_id` but don't read the doc and put it on the stack
+
+Examples:
+
+- `-v iuu` will insert then update that document twice
+- `-v kui` will find a document, update it, then insert a new document
+
+The last document is placed on a stack and `p` pops it off so:
+- `-v kiippu` Finds a document, adds two, then pops them off and updates the original document found.
+
+Note: If you specify a workflow via the `-v` flag, the basic operations above will be ignored and the operations listed will be performed instead.
+
+### Control options
+
+| Flag                                | Description |
+| ----------------------------------- | ----------- |
+| `-m`, `--findandmodify`             | Use findAndModify instead of update and retrieve document (with `-u` or `-v` only)
+| `-j <arg>`, `--workingset <arg>`    | Percentage of database to be the working set (default 100)
+| `-b <arg>`, `--bulksize <arg>`      | Bulk op size (default 512)
+| `--rangedocs <arg>`                 | Number of documents to fetch for range queries (default 10)
+| `--updatefields <arg>`              | Number of fields to update (default 1)
+| `--projectfields <arg>`             | Number of fields to project in finds (default 0, which is no projection)
+
+### Collection options
+
+| Flag                                | Description |
+| ----------------------------------- | ----------- |
+| `-x <arg>`, `--indexes <arg>`       | Number of secondary indexes - does not remove existing (default 0)
+| `-w`, `--nosharding`                | Do not shard the collection
+| `-e`, `--empty`                     | Remove data from collection on startup
+
+### Document shape options
+
+| Flag                                | Description |
+| ----------------------------------- | ----------- |
+| `-a <arg>`, `--arrays <arg>`        | Shape of any arrays in new sample documents `x:y` so `-a 12:60` adds an array of 12 length 60 arrays of integers
+| `-f <arg>`, `--numfields <arg>`     | Number of top level fields in test documents. After the first 3 every third is an integer, every fifth a date, the rest are text. (default 10)
+| `-l <arg>`, `--textfieldsize <arg>` | Length of text fields in bytes (default 30)
+| `--depth <arg>`                     | The depth of the document created (default 0)
+| `--location <arg>`                  | Adds a field by name location and provided ISO-3166-2 code (args: `comma,seperated,list,of,country,code`). One can provide `--location random` to fill the field with random values. This field is required for zone sharding with Atlas.
+
+## Example
 
 ```console
 $ java -jar POCDriver.jar -p -a 3:4
@@ -161,8 +178,9 @@ MongoDB Proof Of Concept - Load Generator
     [0,0,0,0]
   ]
 }
+```
 
-
+```console
 $ java -jar POCDriver.jar -k 20 -i 10 -u 10 -b 20
 MongoDB Proof Of Concept - Load Generator
 ------------------------
@@ -187,24 +205,13 @@ After 30 seconds, 69511 new documents inserted - collection has 139228 in total
 0 rangequeries per second since last report 100.00 % in under 50 milliseconds
 ```
 
+## Troubleshooting
 
-Requirements to Build
----------------------
-
-  * commons-cli-1.3.jar
-  * commons-codec-1.10.jar
-  * gson-2.2.4.jar
-  * loremipsum-1.0.jar (http://sourceforge.net/projects/loremipsum/files/)
-  * mongo-driver-sync-3.8.1.jar
-
-
-Troubleshooting
----------------
+### Connecting with auth
 
 If you are running a mongod with `--auth` enabled, you must pass a user and password with read/write and replSetGetStatus privileges (e.g. `readWriteAnyDatabase` and `clusterMonitor` roles).
 
-Connecting with TLS/SSL
------------------------
+### Connecting with TLS/SSL
 
 If you are using TLS/SSL, then make sure to have the certificates and keys added to the Java keystore.
 
