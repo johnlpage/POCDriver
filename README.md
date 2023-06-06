@@ -44,17 +44,17 @@ Build
 
 Execute
 
-```
-$ mvn clean package
+```bash
+mvn clean package
 ```
 
 and you will find `POCDriver.jar` in `bin` folder. You can execude this program by running,
 
-    java -jar ./bin/POCDriver.jar
-    
+```bash
+java -jar ./bin/POCDriver.jar
+```
+
 Then postpend to this command the flags and arguments you want that are specified below. 
-
-
 
 Basic usage
 -----------
@@ -133,7 +133,7 @@ Document shape options
 Example
 -------
 
-```
+```console
 $ java -jar POCDriver.jar -p -a 3:4
 MongoDB Proof Of Concept - Load Generator
 {
@@ -185,7 +185,6 @@ After 30 seconds, 69511 new documents inserted - collection has 139228 in total
 3139 keyqueries per second since last report 99.99 % in under 50 milliseconds
 1595 updates per second since last report 99.94 % in under 50 milliseconds
 0 rangequeries per second since last report 100.00 % in under 50 milliseconds
-
 ```
 
 
@@ -203,3 +202,37 @@ Troubleshooting
 ---------------
 
 If you are running a mongod with `--auth` enabled, you must pass a user and password with read/write and replSetGetStatus privileges (e.g. `readWriteAnyDatabase` and `clusterMonitor` roles).
+
+Connecting with TLS/SSL
+-----------------------
+
+If you are using TLS/SSL, then make sure to have the certificates and keys added to the Java keystore.
+
+Add the CA certificate to the certstore:
+
+```bash
+cd $JAVA_HOME/lib/security
+keytool -import -trustcacerts -file /path/to/mongodb/ca.crt -keystore ./cacerts -storepass changeit
+```
+
+You need the client certificate and key in `pkcs12` format. If you have them in PEM format, you can convert them via openssl like so:
+
+```bash
+# The cert & key must be both in the same file. You can combine them like so:
+cat /path/to/mongodb/tls.pem /path/to/mongodb/tls-key.pem > /tmp/tls-cert-and-key.pem
+
+openssl pkcs12 -export -out /tmp/mongodb.pkcs12 -in /tmp/tls-cert-and-key.pem
+# When prompted by the openssl command, enter "changeit" as the password (without quotes)
+```
+
+When running POCDriver, supply the `javax.net.ssl` properties, and set the `?ssl=true` field on the connection string:
+
+```bash
+java \
+  -Djavax.net.ssl.trustStore="$JAVA_HOME/lib/security/cacerts" \
+  -Djavax.net.ssl.trustStorePassword="changeit" \
+  -Djavax.net.ssl.keyStore="/tmp/mongodb.pkcs12" \
+  -Djavax.net.ssl.keyStorePassword="changeit" \
+  -jar ./bin/POCDriver.jar \
+  --host "mongodb://localhost:27017/?ssl=true"
+```
