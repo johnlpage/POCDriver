@@ -1,4 +1,4 @@
 .settings
 *.class
 target/
-
+bin/
