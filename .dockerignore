@@ -1,0 +1,16 @@
+# Editors
+.vscode
+.idea
+
+# Binary dirs
+bin
+target
+
+# Docs
+docs
+README.md
+
+# Docker
+# Don't invalidate cache just because Dockerfile changed
+Dockerfile
+.dockerignore
