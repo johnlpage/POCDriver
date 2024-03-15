@@ -146,6 +146,7 @@ Note: If you specify a workflow via the `-v` flag, the basic operations above wi
 | `-f <arg>`, `--numfields <arg>`     | Number of top level fields in test documents. After the first 3 every third is an integer, every fifth a date, the rest are text. (default 10)
 | `-l <arg>`, `--textfieldsize <arg>` | Length of text fields in bytes (default 30)
 | `--depth <arg>`                     | The depth of the document created (default 0)
+| `--binary <arg>`                    | Add a random binary data field of arg KB
 | `--location <arg>`                  | Adds a field by name location and provided ISO-3166-2 code (args: `comma,seperated,list,of,country,code`). One can provide `--location random` to fill the field with random values. This field is required for zone sharding with Atlas.
 
 ## Example
