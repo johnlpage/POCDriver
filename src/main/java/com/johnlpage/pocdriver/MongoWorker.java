@@ -163,7 +163,7 @@ public class MongoWorker implements Runnable {
                     logger.debug("Moving chunk for worker " + workerID + " to " + shardName);
                     admindb.runCommand(new Document("moveChunk", testOpts.databaseName + "." + testOpts.collectionName)
                             .append("find", new Document("_id", new Document("w", workerID).append("i", sequence + 1)))
-                            .append("to", shardName).append("_secondaryThrottle", true).append("_waitForDelete", true)
+                            .append("to", shardName).append("_secondaryThrottle", true).append("_waitForDelete", false)
                             .append("writeConcern", new Document("w", "majority")));
                     move = true;
                 } catch (Exception e) {
