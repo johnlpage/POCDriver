@@ -1,4 +1,6 @@
 .settings
 *.class
 target/
+system-certs.pem
+.DS_Store
 
