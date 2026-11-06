@@ -4,6 +4,8 @@ import static com.mongodb.client.model.Projections.fields;
 import static com.mongodb.client.model.Projections.include;
 import static com.mongodb.client.model.Sorts.descending;
 
+import com.mongodb.MongoBulkWriteException;
+import com.mongodb.MongoException;
 import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.*;
 import com.mongodb.client.model.BulkWriteOptions;
@@ -12,12 +14,10 @@ import com.mongodb.client.model.UpdateManyModel;
 import com.mongodb.client.model.WriteModel;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.apache.commons.math3.distribution.ZipfDistribution;
 import org.bson.Document;
 import org.slf4j.Logger;
@@ -232,87 +232,55 @@ public class MongoWorker implements Runnable {
 
     // This one was a major rewrite as the whole Bulk Ops API changed in 3.0
 
-    private void flushBulkOps(List<WriteModel<Document>> bulkWriter) {
+    private void flushBulkOps(List<WriteModel<Document>> bulkWriter) throws InterruptedException {
         // Time this.
         rotateCollection();
         Date starttime = new Date();
 
-        // This is where ALL writes are happening
-        // So this can fail part way through if we have a failover
-        // In which case we resubmit it
+        // This is where ALL writes are happening. An attempt can fail part way through (e.g. a
+        // failover), so we resubmit what was not applied. Inserts applied by an attempt whose outcome
+        // was unknown come back as duplicate key errors on the next attempt and are counted then.
+        List<WriteModel<Document>> pending = new ArrayList<WriteModel<Document>>(bulkWriter);
+        int icount = 0;
+        int ucount = 0;
+        int preexisting = 0;
+        int attempt = 0;
+        boolean priorAttemptUnknown = false;
 
-        boolean submitted = false;
-        BulkWriteResult bwResult = null;
-
-        while (!submitted && !bulkWriter.isEmpty()) { // can be empty if we removed a Dupe key error
-      try {
-        submitted = true;
-        if (testOpts.useTxn == false) {
-          bwResult = coll.bulkWrite(bulkWriter, bulkOptions);
-          logger.debug("Bulk write completed in {} ms", System.currentTimeMillis() - starttime.getTime());
-        } else {
-            clientSession.startTransaction();
-          bwResult = coll.bulkWrite(clientSession, bulkWriter, bulkOptions);
-            clientSession.commitTransaction();
-        }
-      } catch (Exception e) {
-                // We had a problem with this bulk op - some may be completed, some may not
-
-                // I need to resubmit it here
-                String error = e.getMessage();
-
-                // Check if it's a sup key and remove it
-                Pattern p = Pattern.compile("dup key: \\{ : \\{ w: (.*?), i: (.*?) }");
-
-                Matcher m = p.matcher(error);
-                if (m.find()) {
-                    logger.debug("Duplicate Key");
-                    int thread = Integer.parseInt(m.group(1));
-                    int uniqid = Integer.parseInt(m.group(2));
-                    logger.debug(" ID = " + thread + " " + uniqid);
-                    boolean found = false;
-                    for (Iterator<? super WriteModel<Document>> iter = bulkWriter.listIterator(); iter.hasNext();) {
-                        // Check if it's a InsertOneModel
-
-                        Object o = iter.next();
-                        if (o instanceof InsertOneModel<?>) {
-                            @SuppressWarnings("unchecked")
-                            InsertOneModel<Document> a = (InsertOneModel<Document>) o;
-                            Document id = (Document) a.getDocument().get("_id");
-
-                            int opthread = id.getInteger("w");
-                            int opid = id.getInteger("i");
-
-                            if (id.getInteger("i") == uniqid) {
-                                logger.debug(
-                                        " Removing " + thread + " " + uniqid + " from bulkop as" + " already inserted");
-                                iter.remove();
-                                found = true;
-                            }
-                        }
-                    }
-                    if (!found) {
-                        logger.warn("Cannot find failed op in batch!");
-                    }
-                } else {
-                    // Some other error occurred - possibly MongoCommandException,
-                    // MongoTimeoutException
-                    logger.warn(e.getClass().getSimpleName() + ": " + error);
-                    // Print a full stacktrace since we're in debug mode
-                    if (testOpts.debug)
-                        e.printStackTrace();
-                }
-                logger.debug("No result returned");
-                submitted = false;
+        while (!pending.isEmpty()) {
+            attempt++;
+            try {
+                BulkWriteResult bwResult = executeBulk(pending);
+                logger.debug("Bulk write completed in {} ms", System.currentTimeMillis() - starttime.getTime());
+                icount += bwResult.getInsertedCount();
+                ucount += bwResult.getMatchedCount();
+                pending = Collections.emptyList();
+            } catch (MongoBulkWriteException e) {
+                BulkRetry next = BulkRetry.afterWriteErrors(pending, e.getWriteErrors(),
+                        e.getWriteResult().getInsertedCount(), e.getWriteResult().getMatchedCount(),
+                        testOpts.orderedBatch, testOpts.useTxn, priorAttemptUnknown);
+                icount += next.inserted;
+                ucount += next.matched;
+                preexisting += next.preexisting;
+                pending = next.remaining;
+            } catch (MongoException e) {
+                // Network error, timeout, failover...: unknown whether any of the batch was applied
+                priorAttemptUnknown = true;
+                logger.warn("Bulk write attempt {} failed, resubmitting {} ops: {}: {}", attempt, pending.size(),
+                        e.getClass().getSimpleName(), e.getMessage());
+                if (testOpts.debug)
+                    e.printStackTrace();
+                Thread.sleep(Math.min(100L * attempt, 5000L));
             }
+        }
+        if (preexisting > 0) {
+            logger.warn("{} inserts in this batch were duplicates of documents that already existed (reused"
+                    + " --threadIdStart or _id range?) and were not counted", preexisting);
         }
 
         Date endtime = new Date();
 
         Long taken = endtime.getTime() - starttime.getTime();
-
-        int icount = bwResult.getInsertedCount();
-        int ucount = bwResult.getMatchedCount();
 
         // If the bulk op is slow - ALL those ops were slow
         recordSlowOps("inserts", taken, icount);
@@ -320,6 +288,19 @@ public class MongoWorker implements Runnable {
 
         testResults.RecordOpsDone("inserts", icount);
 
+    }
+
+    private BulkWriteResult executeBulk(final List<WriteModel<Document>> ops) {
+        if (!testOpts.useTxn) {
+            return coll.bulkWrite(ops, bulkOptions);
+        }
+        // withTransaction retries transient errors and unknown commit results, and aborts on other errors
+        return clientSession.withTransaction(new TransactionBody<BulkWriteResult>() {
+            @Override
+            public BulkWriteResult execute() {
+                return coll.bulkWrite(clientSession, ops, bulkOptions);
+            }
+        });
     }
 
     private Document simpleKeyQuery() {
@@ -637,9 +618,7 @@ public class MongoWorker implements Runnable {
             }
 
         } catch (Exception e) {
-            logger.warn("Error: " + e.getMessage());
-            if (testOpts.debug)
-                e.printStackTrace();
+            logger.error("Worker " + workerID + " stopped: " + e.getClass().getSimpleName() + ": " + e.getMessage(), e);
         }
     }
 }
